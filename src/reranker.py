@@ -68,6 +68,18 @@ USER_TEMPLATE = (
     '[{{"title":"歌名","artist":"歌手","reason":"推荐理由(优美流畅,20-40字)"}}]'
 )
 
+# Supplementary context from the Planner.  Injected into the user prompt
+# when available — the original user query remains the primary signal.
+INTENT_CONTEXT_TEMPLATE = (
+    "\n"
+    "【辅助参考 — 系统从用户输入中提取的情绪画像，仅供参考：】\n"
+    "用户情绪：{emotion}\n"
+    "适合场景：{scene}\n"
+    "听众需求：{listener_need}\n"
+    "能量水平：{energy_level}\n"
+    "应避免：{avoid}\n"
+)
+
 
 def _load_songs() -> Dict[str, Any]:
     """
@@ -130,14 +142,29 @@ class DeepSeekReranker:
     # Public API
     # ------------------------------------------------------------------
 
-    def rerank(self, user_query: str, candidates: List[Any]) -> List[Dict]:
+    def rerank(
+        self, user_query: str, candidates: List[Any],
+        intent: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict]:
         """
         Re-rank *candidates* (up to {DEFAULT_CANDIDATE_LIMIT}) to a Top-5 with reasons.
 
-        Returns list of dicts: title, artist, album, year, genre, reason, distance.
+        Parameters
+        ----------
+        user_query : str
+            The user's original natural-language input.  This is the
+            **primary signal** for ranking decisions.
+        candidates : list
+            Top-K results from the Retriever.  Any format — they are
+            normalised via ``_normalize_candidate``.
+        intent : dict, optional
+            Structured intent from the Planner (emotion, scene,
+            listener_need, energy_level, avoid).  Used as
+            **supplementary context only** — the user query is always
+            the ground truth.  When *None* (backward-compatible),
+            behaviour is identical to the pre-agent pipeline.
 
-        candidates can be any format (dicts, strings, lists, nested lists) —
-        they are normalized via _normalize_candidate before processing.
+        Returns list of dicts: title, artist, album, year, genre, reason, distance.
         """
         t_total = time.time()
 
@@ -185,6 +212,23 @@ class DeepSeekReranker:
             total=sliced_count,
             candidates=candidates_text,
         )
+
+        # ---- Inject intent as supplementary context ----
+        # The user query is the primary signal.  Intent fields from the
+        # Planner are appended as auxiliary hints — especially ``avoid``,
+        # which helps the LLM filter out songs the user explicitly
+        # does not want.  When intent is None the prompt is unchanged.
+        if intent:
+            intent_context = INTENT_CONTEXT_TEMPLATE.format(
+                emotion="、".join(intent.get("emotion", [])) or "（未识别）",
+                scene="、".join(intent.get("scene", [])) or "（未识别）",
+                listener_need="、".join(intent.get("listener_need", [])) or "（未识别）",
+                energy_level=intent.get("energy_level", "medium"),
+                avoid="、".join(intent.get("avoid", [])) or "（无）",
+            )
+            user_message += intent_context
+            self._log(f"[Reranker] Injected intent context into prompt")
+
         prompt_ms = (time.time() - t_prompt) * 1000
 
         # ---- API call ----

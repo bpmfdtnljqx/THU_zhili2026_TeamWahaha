@@ -1,10 +1,10 @@
 """
 main.py
 -------
-CLI demo for the Lyra Retrieval Engine.
+CLI demo for the Lyra Agent.
 
 If ./chroma_db does not exist, builds the index first.
-Then enters an interactive query loop.
+Then enters an interactive query loop powered by ``LyraAgent``.
 """
 
 import os
@@ -43,14 +43,12 @@ def main():
         build_collection()
         print()
 
-    # Load retriever
-    from retriever import Retriever
-    retriever = Retriever()
+    # ── Init Agent (loads Planner, Retriever, Reranker, Response) ──
+    print("Loading Lyra Agent...")
+    from agent import LyraAgent
+    agent = LyraAgent()
+    print("Ready.\n")
 
-    # Load reranker (lazy init on first query)
-    reranker = None
-
-    print()
     print("=" * 56)
     print("  🎵  Lyra — AI Music Recommendation Agent")
     print("  Describe your mood or situation, discover songs.")
@@ -73,34 +71,19 @@ def main():
             print("Bye!")
             break
 
-        # Step 1: Retrieve Top-15 candidates
-        candidates = retriever.query(query, k=15)
-
-        # Step 2: Rerank with DeepSeek (show spinner while working)
-        if reranker is None:
-            from reranker import DeepSeekReranker
-            reranker = DeepSeekReranker()
-
+        # ── Run full pipeline (Planner → Retriever → Reranker → Response) ──
         SPINNER_DONE = False
         spinner_thread = threading.Thread(target=_spinner, daemon=True)
         spinner_thread.start()
 
         try:
-            results = reranker.rerank(query, candidates)
+            response = agent.chat(query)
         finally:
             SPINNER_DONE = True
             spinner_thread.join(timeout=0.5)
 
-        # ── Display results ──
         print()
-        print("  " + "─" * 48)
-        for i, r in enumerate(results, 1):
-            print(f"  {i}.  {r['title']}  —  {r['artist']}")
-            print(f"       {r['album']} ({r['year']})  |  {r['genre']}")
-            if r.get("reason"):
-                print(f"       💭 {r['reason']}")
-            print()
-        print("  " + "─" * 48)
+        print(response)
         print()
 
 
