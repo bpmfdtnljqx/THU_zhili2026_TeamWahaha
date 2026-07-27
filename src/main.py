@@ -8,7 +8,6 @@ Then enters an interactive query loop.
 """
 
 import os
-import sys
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,6 +26,9 @@ def main():
     # Load retriever
     from retriever import Retriever
     retriever = Retriever()
+
+    # Load reranker (lazy init on first query)
+    reranker = None
 
     print()
     print("=" * 50)
@@ -49,7 +51,14 @@ def main():
             print("Bye!")
             break
 
-        results = retriever.query(query, k=5)
+        # Step 1: Retrieve Top-10 candidates
+        candidates = retriever.query(query, k=10)
+
+        # Step 2: Rerank with DeepSeek
+        if reranker is None:
+            from reranker import DeepSeekReranker
+            reranker = DeepSeekReranker()
+        results = reranker.rerank(query, candidates)
 
         print()
         for i, r in enumerate(results, 1):
