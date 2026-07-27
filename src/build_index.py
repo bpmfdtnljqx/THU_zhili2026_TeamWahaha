@@ -7,6 +7,10 @@ generate embeddings with BGE-M3, and persist to ChromaDB.
 
 import json
 import os
+
+from dotenv import load_dotenv
+load_dotenv()
+
 from sentence_transformers import SentenceTransformer
 import chromadb
 

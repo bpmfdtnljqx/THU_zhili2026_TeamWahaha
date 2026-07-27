@@ -6,6 +6,11 @@ natural-language text to return Top-K song recommendations.
 """
 
 import os
+# === Force offline mode to avoid network checks ===
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_ENDPOINT"] = ""
+
 from sentence_transformers import SentenceTransformer
 import chromadb
 
@@ -20,7 +25,7 @@ class Retriever:
         self.persist_dir = persist_dir
 
         print(f"Loading embedding model {MODEL_NAME}...")
-        self.model = SentenceTransformer(MODEL_NAME)
+        self.model = SentenceTransformer(MODEL_NAME, trust_remote_code=False)
 
         print(f"Loading ChromaDB collection from {persist_dir}...")
         self.client = chromadb.PersistentClient(path=persist_dir)

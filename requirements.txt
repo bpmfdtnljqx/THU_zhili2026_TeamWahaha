@@ -1,3 +1,4 @@
 torch
 sentence-transformers
 chromadb
+python-dotenv

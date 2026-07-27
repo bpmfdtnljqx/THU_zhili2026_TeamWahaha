@@ -10,6 +10,9 @@ Then enters an interactive query loop.
 import os
 import sys
 
+from dotenv import load_dotenv
+load_dotenv()
+
 PERSIST_DIR = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
 
 
