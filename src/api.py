@@ -1,7 +1,7 @@
 """
 api.py
 ------
-Thin, importable API wrapper for the Lyra recommendation engine.
+Thin, importable API wrapper for the Lyra platform.
 
 Designed for easy integration with future frontends (FastAPI, Flask, etc.).
 
@@ -11,11 +11,32 @@ Usage::
 
     # Structured output (for API / frontend):
     result = recommend("今天心情很低落")
-    # → fully JSON-serializable dict with intent, candidates, results, etc.
+    # → fully JSON-serializable dict
 
     # Display-ready string (for CLI or text responses):
     text = chat("今天心情很低落")
     # → formatted multi-line string
+
+Extension guide for future modules
+-----------------------------------
+When Recognition and Composition are implemented, extend this file
+by following the same pattern:
+
+1. Import the new module (e.g. ``from recognition import Recognizer``)
+2. Add a module-level singleton (or reuse the Agent if it orchestrates)
+3. Expose a public function returning the common response envelope::
+
+       def recognize(audio, sample_rate=16000) -> dict:
+           '''Return {"success": True, "module": "recognition", ...}'''
+           ...
+
+       def compose(prompt, style=None, duration_s=30) -> dict:
+           '''Return {"success": True, "module": "composition", ...}'''
+           ...
+
+No abstract base classes or shared inheritance are required.
+The common JSON envelope (``success``, ``module``, ``timing``, ``metadata``)
+documented in ``docs/API_SPEC.md`` is the only integration contract.
 """
 
 from typing import Any, Dict
