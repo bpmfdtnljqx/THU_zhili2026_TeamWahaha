@@ -25,10 +25,18 @@ import requests
 from dotenv import load_dotenv
 
 from reranker_cache import RerankerCache
+from logger import get_logger
 
 load_dotenv()
 
 SONGS_PATH = os.path.join(os.path.dirname(__file__), "..", "songs.json")
+
+# ---------------------------------------------------------------------------
+# Logger
+# ---------------------------------------------------------------------------
+
+VERBOSE = os.getenv("LYRA_VERBOSE", "0") == "1"
+_log = get_logger("reranker", enabled=VERBOSE)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -40,7 +48,6 @@ API_MAX_TOKENS = 600
 API_TOP_P = 0.9
 API_TIMEOUT = 20
 API_MAX_RETRIES = 2
-VERBOSE = os.getenv("LYRA_VERBOSE", "0") == "1"
 
 CACHE_ENABLED = os.getenv("LYRA_CACHE_ENABLED", "1") == "1"
 CACHE_TTL = int(os.getenv("LYRA_CACHE_TTL", "1800"))
@@ -54,14 +61,22 @@ FALLBACK_MODELS = ["deepseek-chat", "deepseek-reasoner"]
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = (
-    "你是音乐推荐专家。基于用户查询和候选歌曲，输出Top5排序及理由。"
-    "优先级: 情感匹配 > 场景匹配 > 主题匹配。"
-    "推荐理由要优美、有文采、能打动人心，20-40字，像唱片介绍那样写。"
+    "你是音乐推荐专家。基于用户查询、候选歌曲和系统提取的情绪画像，输出Top5排序及理由。\n\n"
+    "排序原则（权重递减）：\n"
+    "1. 情感匹配：候选歌曲的情绪标签必须与用户的情绪画像共鸣。\n"
+    "2. 场景匹配：歌曲的适合场景应与用户当前场景对齐。\n"
+    "3. 主题匹配：歌曲的核心主题应贴近用户需求。\n"
+    "4. 避免违规：如果情绪画像标注了「应避免」的风格/情绪，绝对不要推荐匹配这些特征的歌曲。\n\n"
+    "多样性要求：\n"
+    "- 同一歌手的歌曲不超过1首（除非用户明确指定该歌手）。\n"
+    "- 尽可能覆盖不同的年代和音乐风格。\n\n"
+    "推荐理由要优美、有文采、能打动人心，20-40字，像唱片介绍那样写。\n"
     "只输出JSON数组，不要其他文字。"
 )
 
 USER_TEMPLATE = (
     "{user_query}\n\n"
+    "{intent_context}"
     "候选歌曲 ({total}首):\n"
     "{candidates}\n\n"
     '输出格式(JSON数组,5个对象):\n'
@@ -71,13 +86,12 @@ USER_TEMPLATE = (
 # Supplementary context from the Planner.  Injected into the user prompt
 # when available — the original user query remains the primary signal.
 INTENT_CONTEXT_TEMPLATE = (
-    "\n"
-    "【辅助参考 — 系统从用户输入中提取的情绪画像，仅供参考：】\n"
-    "用户情绪：{emotion}\n"
+    "【必须严格参考的情绪画像 — 从用户输入中提取】\n"
+    "当前情绪：{emotion}\n"
     "适合场景：{scene}\n"
     "听众需求：{listener_need}\n"
     "能量水平：{energy_level}\n"
-    "应避免：{avoid}\n"
+    "【严禁推荐】以下特征的歌曲：{avoid}\n"
 )
 
 
@@ -109,13 +123,15 @@ class DeepSeekReranker:
         raw_base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
         self.base_url = raw_base.rstrip("/")
         if not self.base_url.endswith("/v1"):
-            # Auto-append /v1 if missing (common misconfiguration)
             self.base_url += "/v1"
 
         self.songs = _load_songs()
 
-        # Verbose logging — defaults to LYRA_VERBOSE env var
-        self.verbose = verbose if verbose is not None else VERBOSE
+        # When verbose is explicitly passed, override the module-level logger
+        if verbose is not None:
+            global _log
+            from logger import Logger
+            _log = Logger("reranker", enabled=verbose)
 
         # Init cache
         self._cache = RerankerCache(
@@ -123,20 +139,11 @@ class DeepSeekReranker:
             ttl_seconds=CACHE_TTL,
         ) if CACHE_ENABLED else None
 
-        self._log(
-            f"[Reranker] Init | model={self.model} | "
+        _log.info(
+            f"Init | model={self.model} | "
             f"base_url={self.base_url} | "
             f"api_key={'***' + self.api_key[-6:] if self.api_key else 'MISSING'}"
         )
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _log(self, msg: str) -> None:
-        """Print debug message only when verbose mode is enabled."""
-        if self.verbose:
-            print(msg)
 
     # ------------------------------------------------------------------
     # Public API
@@ -176,18 +183,18 @@ class DeepSeekReranker:
         # works with a consistent format.
         candidates: List[Dict] = []
         for idx, item in enumerate(candidates_raw):
-            self._log(f"  [rerank] raw[{idx}] type={type(item).__name__}  "
+            _log.debug(f"  [rerank] raw[{idx}] type={type(item).__name__}  "
                       f"sample={str(item)[:120]}")
             norm = self._normalize_candidate(item)
             if norm is not None:
                 candidates.append(norm)
             else:
-                self._log(f"  [rerank] raw[{idx}] → dropped (unparseable)")
+                _log.debug(f"  [rerank] raw[{idx}] → dropped (unparseable)")
 
         sliced_count = len(candidates)
         candidate_ids = [str(c.get("id", f"unknown_{i}")) for i, c in enumerate(candidates)]
 
-        self._log(
+        _log.debug(
             f"[Reranker] Start reranking | "
             f"received={original_count} → normalized={sliced_count}"
         )
@@ -198,26 +205,25 @@ class DeepSeekReranker:
             cached = self._cache.get(cache_key)
             if cached is not None:
                 elapsed = time.time() - t_total
-                self._log(
+                _log.debug(
                     f"[Reranker] CACHE HIT → returned in {elapsed:.2f}s | "
                     f"stats={self._cache.stats}"
                 )
                 return cached
 
+        # ---- Apply avoid filter (before prompt building) ----
+        if intent and intent.get("avoid"):
+            candidates = self._filter_by_avoid(candidates, intent["avoid"])
+            _log.debug(
+                f"[Reranker] Avoid filter applied | "
+                f"avoid={intent['avoid']} | remaining={len(candidates)}"
+            )
+
         # ---- Build prompt ----
         t_prompt = time.time()
-        candidates_text = self._build_candidates_text(candidates)
-        user_message = USER_TEMPLATE.format(
-            user_query=user_query,
-            total=sliced_count,
-            candidates=candidates_text,
-        )
 
-        # ---- Inject intent as supplementary context ----
-        # The user query is the primary signal.  Intent fields from the
-        # Planner are appended as auxiliary hints — especially ``avoid``,
-        # which helps the LLM filter out songs the user explicitly
-        # does not want.  When intent is None the prompt is unchanged.
+        # Build intent context FIRST so it appears before candidates in the prompt
+        intent_context = ""
         if intent:
             intent_context = INTENT_CONTEXT_TEMPLATE.format(
                 emotion="、".join(intent.get("emotion", [])) or "（未识别）",
@@ -226,8 +232,15 @@ class DeepSeekReranker:
                 energy_level=intent.get("energy_level", "medium"),
                 avoid="、".join(intent.get("avoid", [])) or "（无）",
             )
-            user_message += intent_context
-            self._log(f"[Reranker] Injected intent context into prompt")
+            _log.debug(f"[Reranker] Intent context prepended to prompt")
+
+        candidates_text = self._build_candidates_text(candidates)
+        user_message = USER_TEMPLATE.format(
+            user_query=user_query,
+            total=len(candidates),
+            intent_context=intent_context,
+            candidates=candidates_text,
+        )
 
         prompt_ms = (time.time() - t_prompt) * 1000
 
@@ -235,10 +248,10 @@ class DeepSeekReranker:
         try:
             raw_response, api_ms = self._call_api(user_message)
         except Exception as e:
-            self._log(f"[Reranker] API error: {e}")
-            self._log(f"[Reranker] Falling back to vector Top-5.")
+            _log.debug(f"[Reranker] API error: {e}")
+            _log.debug(f"[Reranker] Falling back to vector Top-5.")
             elapsed = time.time() - t_total
-            self._log(f"[Reranker] Completed in {elapsed:.2f}s (fallback)")
+            _log.debug(f"[Reranker] Completed in {elapsed:.2f}s (fallback)")
             return self._fallback(user_query, candidates[:5])
 
         # ---- Parse response ----
@@ -247,14 +260,14 @@ class DeepSeekReranker:
             output = self._parse_response(raw_response, candidates)
             parse_ms = (time.time() - t_parse) * 1000
         except Exception as e:
-            self._log(f"[Reranker] Parse error: {e}")
+            _log.debug(f"[Reranker] Parse error: {e}")
             elapsed = time.time() - t_total
-            self._log(f"[Reranker] Completed in {elapsed:.2f}s (fallback)")
+            _log.debug(f"[Reranker] Completed in {elapsed:.2f}s (fallback)")
             return self._fallback(user_query, candidates[:5])
 
         # ---- Summary ----
         elapsed = time.time() - t_total
-        self._log(
+        _log.debug(
             f"[Reranker] Completed in {elapsed:.2f}s | "
             f"prompt={prompt_ms:.0f}ms api={api_ms:.0f}ms parse={parse_ms:.0f}ms"
         )
@@ -295,15 +308,15 @@ class DeepSeekReranker:
                     # Merge: candidate's own fields win, song_data fills gaps
                     merged = dict(song_data)
                     merged.update(item)
-                    self._log(f"  [normalize] dict+id   → id={song_id}  title={merged.get('title','')}")
+                    _log.debug(f"  [normalize] dict+id   → id={song_id}  title={merged.get('title','')}")
                     return merged
                 # ID exists but not in songs.json — use candidate as-is
-                self._log(f"  [normalize] dict+id   → id={song_id}  (NOT in songs.json, using raw)")
+                _log.debug(f"  [normalize] dict+id   → id={song_id}  (NOT in songs.json, using raw)")
                 return item
             # Dict without id — try title/artist from songs or use raw
             title = item.get("title", "")
             artist = item.get("artist", "")
-            self._log(f"  [normalize] dict-no-id → title='{title}' artist='{artist}' (using raw)")
+            _log.debug(f"  [normalize] dict-no-id → title='{title}' artist='{artist}' (using raw)")
             return item
 
         # ---- STRING: plain song ID ----
@@ -312,20 +325,20 @@ class DeepSeekReranker:
             if song_data:
                 result = dict(song_data)
                 result["id"] = item
-                self._log(f"  [normalize] str       → id={item}  title={result.get('title','')}")
+                _log.debug(f"  [normalize] str       → id={item}  title={result.get('title','')}")
                 return result
-            self._log(f"  [normalize] str       → id={item}  (NOT in songs.json)")
+            _log.debug(f"  [normalize] str       → id={item}  (NOT in songs.json)")
             return {"id": item, "title": item, "artist": "unknown"}
 
         # ---- LIST: could be [id], [id, title, artist, ...], or nested ----
         if isinstance(item, list):
             if len(item) == 0:
-                self._log(f"  [normalize] list      → EMPTY list, skipping")
+                _log.debug(f"  [normalize] list      → EMPTY list, skipping")
                 return None
 
             # If first element is a list itself, recurse into it
             if isinstance(item[0], list):
-                self._log(f"  [normalize] list      → nested list (len={len(item)}), recursing into [0]")
+                _log.debug(f"  [normalize] list      → nested list (len={len(item)}), recursing into [0]")
                 return self._normalize_candidate(item[0])
 
             # First element is a string — treat as song ID
@@ -340,7 +353,7 @@ class DeepSeekReranker:
                         result["title"] = str(item[1])
                     if len(item) >= 3:
                         result["artist"] = str(item[2])
-                    self._log(f"  [normalize] list[str] → id={song_id}  title={result.get('title','')} (len={len(item)})")
+                    _log.debug(f"  [normalize] list[str] → id={song_id}  title={result.get('title','')} (len={len(item)})")
                     return result
                 # Not in songs — build minimal dict
                 result = {"id": song_id, "title": song_id, "artist": "unknown"}
@@ -348,16 +361,62 @@ class DeepSeekReranker:
                     result["title"] = str(item[1])
                 if len(item) >= 3:
                     result["artist"] = str(item[2])
-                self._log(f"  [normalize] list[str] → id={song_id}  (NOT in songs, using list fields)")
+                _log.debug(f"  [normalize] list[str] → id={song_id}  (NOT in songs, using list fields)")
                 return result
 
             # First element is something else (dict, int, etc.)
-            self._log(f"  [normalize] list      → unexpected inner type={type(item[0]).__name__}, trying [0]")
+            _log.debug(f"  [normalize] list      → unexpected inner type={type(item[0]).__name__}, trying [0]")
             return self._normalize_candidate(item[0])
 
         # ---- UNKNOWN TYPE ----
-        self._log(f"  [normalize] UNKNOWN   → type={type(item).__name__}  value={str(item)[:80]}")
+        _log.debug(f"  [normalize] UNKNOWN   → type={type(item).__name__}  value={str(item)[:80]}")
         return None
+
+    def _filter_by_avoid(
+        self, candidates: List[Dict], avoid: List[str]
+    ) -> List[Dict]:
+        """Drop candidates whose metadata overlaps with avoid keywords.
+
+        Checks candidate fields (emotion, core_theme, suitable_scene,
+        keywords, energy_level) for overlap with the avoid list.
+        If filtering would leave fewer than 5 candidates, returns the
+        original list unchanged to avoid empty results.
+        """
+        if not avoid:
+            return candidates
+
+        avoid_lower = set(a.lower().strip() for a in avoid if a.strip())
+        if not avoid_lower:
+            return candidates
+
+        filtered: List[Dict] = []
+        for c in candidates:
+            # Build a text profile from the candidate's rich metadata
+            c_text = " ".join([
+                " ".join(c.get("emotion", [])),
+                " ".join(c.get("core_theme", [])),
+                " ".join(c.get("suitable_scene", [])),
+                " ".join(c.get("keywords", [])),
+                c.get("energy_level", ""),
+            ]).lower()
+
+            # Check for keyword overlap
+            if not any(a in c_text for a in avoid_lower):
+                filtered.append(c)
+
+        # Safety: if too many were filtered out, keep the original list
+        if len(filtered) < 5:
+            _log.debug(
+                f"  [avoid_filter] Kept only {len(filtered)}/{len(candidates)} "
+                f"— too few, reverting to original list"
+            )
+            return candidates
+
+        _log.debug(
+            f"  [avoid_filter] {len(candidates)} → {len(filtered)} "
+            f"(dropped {len(candidates) - len(filtered)})"
+        )
+        return filtered
 
     def _build_candidates_text(self, candidates: List[Any]) -> str:
         """
@@ -372,13 +431,13 @@ class DeepSeekReranker:
         lines: List[str] = []
         for i, item in enumerate(candidates):
             # Debug: show what we received
-            self._log(f"  [build] candidate[{i}] type={type(item).__name__}  "
+            _log.debug(f"  [build] candidate[{i}] type={type(item).__name__}  "
                       f"raw_sample={str(item)[:120]}")
 
             # Normalize to a standard dict
             normalized = self._normalize_candidate(item)
             if normalized is None:
-                self._log(f"  [build] candidate[{i}] → SKIPPED (normalize returned None)")
+                _log.debug(f"  [build] candidate[{i}] → SKIPPED (normalize returned None)")
                 continue
 
             # Gather fields — prefer normalized (enriched from songs.json),
@@ -392,7 +451,7 @@ class DeepSeekReranker:
             scene = _join_truncate(normalized.get("suitable_scene", []), max_len=40)
 
             if not title:
-                self._log(f"  [build] candidate[{i}] → SKIPPED (no title)")
+                _log.debug(f"  [build] candidate[{i}] → SKIPPED (no title)")
                 continue
 
             lines.append(
@@ -403,7 +462,7 @@ class DeepSeekReranker:
             )
 
         result = "\n".join(lines)
-        self._log(f"  [build] produced {len(lines)} lines from {len(candidates)} candidates")
+        _log.debug(f"  [build] produced {len(lines)} lines from {len(candidates)} candidates")
         return result
 
     def _call_api(self, user_message: str) -> tuple:
@@ -435,7 +494,7 @@ class DeepSeekReranker:
 
         # Log request (sanitized)
         prompt_preview = user_message[:120].replace("\n", "\\n")
-        self._log(
+        _log.debug(
             f"[API] → Request | url={url} | model={payload['model']} | "
             f"max_tokens={payload['max_tokens']} | temp={payload['temperature']} | "
             f"prompt_preview=\"{prompt_preview}...\""
@@ -470,7 +529,7 @@ class DeepSeekReranker:
                     content_type = response.headers.get("Content-Type", "unknown")
                     body = response.text
 
-                    self._log(
+                    _log.debug(
                         f"[API] ← Response | status={status} | "
                         f"content_type={content_type} | "
                         f"body_len={len(body)} | call_ms={call_ms:.0f}"
@@ -480,7 +539,7 @@ class DeepSeekReranker:
                         # Check that it's actually JSON, not an HTML page
                         if not body.strip():
                             last_error = f"HTTP 200 but EMPTY body (model={model_name})"
-                            self._log(f"[API] ⚠ {last_error}")
+                            _log.debug(f"[API] ⚠ {last_error}")
                             break  # try next model
 
                         if "text/html" in content_type:
@@ -488,9 +547,9 @@ class DeepSeekReranker:
                                 f"HTTP 200 but got HTML (wrong endpoint? "
                                 f"Tried {url}). Check DEEPSEEK_BASE_URL."
                             )
-                            self._log(f"[API] ⚠ {last_error}")
+                            _log.debug(f"[API] ⚠ {last_error}")
                             # Truncate HTML body for debugging
-                            self._log(f"[API] HTML body: {body[:500]}")
+                            _log.debug(f"[API] HTML body: {body[:500]}")
                             break  # endpoint issue — don't retry same URL
 
                         try:
@@ -500,7 +559,7 @@ class DeepSeekReranker:
                                 f"HTTP 200 but body is not JSON: {je}. "
                                 f"Body preview: {body[:300]}"
                             )
-                            self._log(f"[API] ⚠ {last_error}")
+                            _log.debug(f"[API] ⚠ {last_error}")
                             break  # try next model
 
                         # Extract content
@@ -511,7 +570,7 @@ class DeepSeekReranker:
                                 f"Keys: {list(data.keys())}. "
                                 f"Body: {body[:500]}"
                             )
-                            self._log(f"[API] ⚠ {last_error}")
+                            _log.debug(f"[API] ⚠ {last_error}")
                             break
 
                         content = choices[0].get("message", {}).get("content", "")
@@ -525,12 +584,12 @@ class DeepSeekReranker:
                                 f"finish_reason={finish_reason}, "
                                 f"body_preview={body[:300]}"
                             )
-                            self._log(f"[API] ⚠ {last_error}")
+                            _log.debug(f"[API] ⚠ {last_error}")
                             break
 
                         # ── Success! ──
                         api_ms = (time.time() - t0) * 1000
-                        self._log(
+                        _log.debug(
                             f"[API] ✅ Success | model={model_name} | "
                             f"attempt={attempt + 1}.{retry + 1} | "
                             f"content_len={len(content)} | "
@@ -543,7 +602,7 @@ class DeepSeekReranker:
                             f"HTTP 401 Unauthorized — API key is invalid or expired. "
                             f"Key ends with: ...{self.api_key[-6:] if self.api_key else 'N/A'}"
                         )
-                        self._log(f"[API] ❌ {last_error}")
+                        _log.debug(f"[API] ❌ {last_error}")
                         # Don't retry on auth errors
                         raise RuntimeError(last_error)
 
@@ -552,7 +611,7 @@ class DeepSeekReranker:
                             f"HTTP 403 Forbidden — API key lacks permission "
                             f"or account is restricted."
                         )
-                        self._log(f"[API] ❌ {last_error}")
+                        _log.debug(f"[API] ❌ {last_error}")
                         raise RuntimeError(last_error)
 
                     elif status == 429:
@@ -561,27 +620,27 @@ class DeepSeekReranker:
                             f"HTTP 429 Rate Limited | "
                             f"Retry-After={retry_after}s"
                         )
-                        self._log(f"[API] ⚠ {last_error}")
+                        _log.debug(f"[API] ⚠ {last_error}")
                         if retry < API_MAX_RETRIES:
                             wait = int(retry_after) if retry_after.isdigit() else (2 ** retry)
-                            self._log(f"[API] Waiting {wait}s before retry...")
+                            _log.debug(f"[API] Waiting {wait}s before retry...")
                             time.sleep(wait)
                             continue
                         break  # try next model
 
                     elif status in (500, 502, 503, 504):
                         last_error = f"HTTP {status} Server Error"
-                        self._log(f"[API] ⚠ {last_error}")
+                        _log.debug(f"[API] ⚠ {last_error}")
                         if retry < API_MAX_RETRIES:
                             wait = 2 ** retry
-                            self._log(f"[API] Waiting {wait}s before retry...")
+                            _log.debug(f"[API] Waiting {wait}s before retry...")
                             time.sleep(wait)
                             continue
                         break  # try next model
 
                     else:
                         last_error = f"HTTP {status} | body={body[:300]}"
-                        self._log(f"[API] ⚠ Unexpected: {last_error}")
+                        _log.debug(f"[API] ⚠ Unexpected: {last_error}")
                         break  # unknown status → try next model
 
                 except requests.exceptions.Timeout:
@@ -589,7 +648,7 @@ class DeepSeekReranker:
                         f"Timeout after {API_TIMEOUT}s (model={model_name}, "
                         f"retry={retry + 1}/{API_MAX_RETRIES + 1})"
                     )
-                    self._log(f"[API] ⚠ {last_error}")
+                    _log.debug(f"[API] ⚠ {last_error}")
                     if retry < API_MAX_RETRIES:
                         continue
                     break
@@ -599,12 +658,12 @@ class DeepSeekReranker:
                         f"Connection error: {ce}. "
                         f"Check network, proxy, and DEEPSEEK_BASE_URL={self.base_url}"
                     )
-                    self._log(f"[API] ❌ {last_error}")
+                    _log.debug(f"[API] ❌ {last_error}")
                     break  # connection issues — try next model
 
                 except requests.exceptions.RequestException as re:
                     last_error = f"Request error: {re}"
-                    self._log(f"[API] ⚠ {last_error}")
+                    _log.debug(f"[API] ⚠ {last_error}")
                     break
 
         # ── All attempts exhausted ──
@@ -613,7 +672,7 @@ class DeepSeekReranker:
             f"Models tried: {models_to_try}. "
             f"Last error: {last_error}"
         )
-        self._log(f"[API] ❌ {error_msg}")
+        _log.debug(f"[API] ❌ {error_msg}")
         raise RuntimeError(error_msg)
 
     def _parse_response(
@@ -633,20 +692,20 @@ class DeepSeekReranker:
           - ``title`` only → candidate match
         """
         # ── Log raw response for debugging ──
-        self._log(f"  [parse] Raw response ({len(raw)} chars):")
-        self._log(f"  [parse] {raw[:500]}")
+        _log.debug(f"  [parse] Raw response ({len(raw)} chars):")
+        _log.debug(f"  [parse] {raw[:500]}")
         if len(raw) > 500:
-            self._log(f"  [parse] ... ({len(raw) - 500} more chars)")
+            _log.debug(f"  [parse] ... ({len(raw) - 500} more chars)")
 
         parsed = self._extract_json(raw)
 
         if parsed is None:
-            self._log(f"  [parse] FAILED: all extraction strategies exhausted")
+            _log.debug(f"  [parse] FAILED: all extraction strategies exhausted")
             raise ValueError(
                 f"Could not extract JSON from response: {raw[:200]}"
             )
 
-        self._log(f"  [parse] Extracted JSON type={type(parsed).__name__}  "
+        _log.debug(f"  [parse] Extracted JSON type={type(parsed).__name__}  "
                   f"preview={json.dumps(parsed, ensure_ascii=False)[:200]}")
 
         # ── Normalize to list of song-ref dicts ──
@@ -656,12 +715,12 @@ class DeepSeekReranker:
                 f"Parsed JSON but got empty song list: {json.dumps(parsed, ensure_ascii=False)[:200]}"
             )
 
-        self._log(f"  [parse] Normalized → {len(items)} song refs: "
+        _log.debug(f"  [parse] Normalized → {len(items)} song refs: "
                   f"{json.dumps(items[:3], ensure_ascii=False)}")
 
         # ── Match against candidates ──
         output = self._match_to_candidates(items, candidates)
-        self._log(f"  [parse] Matched → {len(output)} validated songs")
+        _log.debug(f"  [parse] Matched → {len(output)} validated songs")
 
         if not output:
             raise ValueError(

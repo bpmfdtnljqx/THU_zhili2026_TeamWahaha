@@ -12,9 +12,14 @@ Features:
 """
 
 import hashlib
+import os
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
+
+from logger import get_logger
+
+_log = get_logger("cache", enabled=os.getenv("LYRA_CACHE_DEBUG", "0") == "1")
 
 
 class RerankerCache:

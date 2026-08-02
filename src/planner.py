@@ -27,7 +27,19 @@ from typing import Any, Dict, List, Optional
 import requests
 from dotenv import load_dotenv
 
+from logger import get_logger
+
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Logger
+# ---------------------------------------------------------------------------
+
+PLANNER_DEBUG = (
+    os.getenv("LYRA_VERBOSE", "0") == "1"
+    or os.getenv("LYRA_PLANNER_DEBUG", "0") == "1"
+)
+_log = get_logger("planner", enabled=PLANNER_DEBUG)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -36,17 +48,6 @@ load_dotenv()
 API_TEMPERATURE = 0.0
 API_MAX_TOKENS = 200  # intent is small — ~100 tokens is plenty
 API_TIMEOUT = 10  # seconds — planner should be fast
-
-# Debug logging — controlled independently so Planner output can be
-# inspected even when the rest of the pipeline is quiet.
-PLANNER_DEBUG = (
-    os.getenv("LYRA_VERBOSE", "0") == "1"
-    or os.getenv("LYRA_PLANNER_DEBUG", "0") == "1"
-)
-
-# ---------------------------------------------------------------------------
-# Prompts
-# ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = (
     "你是音乐推荐系统的「意图理解」模块。"
@@ -95,7 +96,12 @@ class Planner:
         if not self.base_url.endswith("/v1"):
             self.base_url += "/v1"
 
-        self.verbose = verbose if verbose is not None else PLANNER_DEBUG
+        # verbose flag controls whether the Planner itself logs;
+        # when explicitly passed, it overrides the env-var setting.
+        if verbose is not None:
+            global _log
+            from logger import Logger
+            _log = Logger("planner", enabled=verbose)
 
     # ------------------------------------------------------------------
     # Public API
@@ -117,15 +123,15 @@ class Planner:
         try:
             raw_response, api_ms = self._call_api(user_input)
         except Exception as exc:
-            self._log(f"[Planner] API call failed → fallback.  ({exc})")
+            _log.warn(f"API call failed → fallback.  ({exc})")
             return self._fallback(user_input)
 
         # ── Parse ──
         try:
             intent = self._parse_intent(raw_response)
         except Exception as exc:
-            self._log(f"[Planner] Parse failed → fallback.  ({exc})")
-            self._log(f"[Planner] Raw response was: {raw_response[:300]}")
+            _log.warn(f"Parse failed → fallback.  ({exc})")
+            _log.debug(f"Raw response was: {raw_response[:300]}")
             return self._fallback(user_input)
 
         # ── Validate & enrich ──
@@ -133,8 +139,8 @@ class Planner:
         intent["free_text"] = self._build_free_text(user_input, intent)
 
         elapsed = (time.time() - t0) * 1000
-        self._log(
-            f"[Planner] Done in {elapsed:.0f}ms | api={api_ms:.0f}ms | "
+        _log.debug(
+            f"Done in {elapsed:.0f}ms | api={api_ms:.0f}ms | "
             f"intent={json.dumps({k: v for k, v in intent.items() if k != 'free_text'}, ensure_ascii=False)}"
         )
 
@@ -163,8 +169,8 @@ class Planner:
 
         url = f"{self.base_url}/chat/completions"
 
-        self._log(
-            f"[Planner] → API | model={self.model} | "
+        _log.debug(
+            f"→ API | model={self.model} | "
             f"input_len={len(user_input)} | timeout={API_TIMEOUT}s"
         )
 
@@ -198,7 +204,7 @@ class Planner:
             finish = choices[0].get("finish_reason", "unknown")
             raise RuntimeError(f"Planner API returned empty content (finish_reason={finish})")
 
-        self._log(f"[Planner] ← API | {api_ms:.0f}ms | content_len={len(content)}")
+        _log.debug(f"← API | {api_ms:.0f}ms | content_len={len(content)}")
         return content, api_ms
 
     # ------------------------------------------------------------------
@@ -342,38 +348,45 @@ class Planner:
 
     @staticmethod
     def _build_free_text(user_input: str, intent: Dict[str, Any]) -> str:
-        """Build a natural-language query string from structured intent.
+        """Build a rich, natural-language query string from structured intent.
 
-        This is what gets embedded by BGE-M3 for vector search.  It
-        combines the structured fields with the original user input so
-        the embedding captures both the abstracted intent AND the user's
-        actual words.
+        Produces flowing narrative prose (not bullet points) so BGE-M3
+        can embed the full emotional context more meaningfully.
+
+        Example output:
+          "用户感到疲惫、压抑，正处于深夜、独处的场景中，
+           需要放松、安静陪伴的音乐，希望听到安静舒缓的音乐。
+           不想听到吵闹、节奏快风格的歌曲。用户说：「加班到凌晨...」"
         """
         parts = []
 
         emotion = intent.get("emotion", [])
-        if emotion:
-            parts.append(f"用户情绪：{'、'.join(emotion)}。")
-
         scene = intent.get("scene", [])
-        if scene:
-            parts.append(f"适合场景：{'、'.join(scene)}。")
-
         need = intent.get("listener_need", [])
-        if need:
-            parts.append(f"听众需要：{'、'.join(need)}。")
-
         energy = intent.get("energy_level", "")
-        if energy:
-            energy_map = {"low": "低", "medium": "中", "high": "高"}
-            parts.append(f"能量水平：{energy_map.get(energy, energy)}。")
-
         avoid = intent.get("avoid", [])
+
+        # Build a flowing narrative sentence
+        sentence_parts = []
+        if emotion:
+            sentence_parts.append(f"用户感到{'、'.join(emotion)}")
+        if scene:
+            sentence_parts.append(f"正处于{'、'.join(scene)}的场景中")
+        if need:
+            sentence_parts.append(f"需要{'、'.join(need)}的音乐")
+
+        energy_map = {"low": "安静舒缓", "medium": "中等节奏", "high": "高能量"}
+        if energy and energy in energy_map:
+            sentence_parts.append(f"希望听到{energy_map[energy]}的音乐")
+
+        if sentence_parts:
+            parts.append("，".join(sentence_parts) + "。")
+
         if avoid:
-            parts.append(f"应避免：{'、'.join(avoid)}。")
+            parts.append(f"不想听到{'、'.join(avoid)}风格的歌曲。")
 
         # Always append the original user input as an anchor
-        parts.append(f"原始输入：{user_input}")
+        parts.append(f"用户说：「{user_input}」")
 
         return " ".join(parts)
 
@@ -392,11 +405,3 @@ class Planner:
             "avoid": [],
             "free_text": user_input,
         }
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    def _log(self, msg: str) -> None:
-        if self.verbose:
-            print(msg)

@@ -12,21 +12,26 @@ The goal is semantic understanding of user emotions and life situations, then re
 
 ## Current Project Status
 
-Completed:
+**Recommendation backend is feature complete.**
 
-- Music Knowledge Base (songs.json)
-- Around 170 curated Chinese songs
-- Structured metadata
-- Product design
-- Recommendation workflow
+Completed pipeline:
 
-Not implemented yet:
+- Planner — intent extraction (DeepSeek API)
+- Retriever — semantic search (BGE-M3 + ChromaDB)
+- Reranker — AI ranking with avoid filtering + diversity control (DeepSeek API)
+- LLMResponse — natural, empathetic conversation (DeepSeek API)
+- Response — template-based fallback for graceful degradation
+- FeedbackStore — JSONL persistence for future personalization
+- Structured logging — unified pipeline observability
+- API wrapper — `recommend()` returns structured JSON-serializable data
+- Enhanced benchmark — diversity metrics, LLM judge, pipeline timing
 
-- Embedding
-- Vector Database
-- Retrieval Engine
-- Recommendation Agent
-- Frontend
+Not yet implemented:
+
+- Frontend / chat UI
+- Music Recognition (independent module)
+- AI Composition (independent module)
+- Feedback-driven personalization
 
 ---
 
@@ -40,8 +45,6 @@ Do NOT implement keyword matching.
 
 Always use semantic embedding.
 
----
-
 ### 2. Agent First
 
 Lyra is an AI Agent.
@@ -50,18 +53,13 @@ Avoid writing business logic directly into frontend.
 
 Keep retrieval, reasoning and response generation independent.
 
----
-
 ### 3. Music Knowledge Base
 
 songs.json is the source of truth.
 
 Never overwrite it automatically.
 
-If new fields are needed,
-generate them dynamically.
-
----
+If new fields are needed, generate them dynamically.
 
 ### 4. Code Style
 
@@ -71,24 +69,30 @@ Avoid over-engineering.
 
 Avoid unnecessary frameworks.
 
----
+### 5. Stable Architecture
 
-### 5. Current Milestone
+The pipeline is stable: Planner → Retriever → Reranker → LLMResponse.
 
-Current task:
+Do not redesign the pipeline without explicit approval.
 
-Build Retrieval Engine.
+Prefer small incremental improvements over large rewrites.
 
-Requirements:
+Keep modules loosely coupled. Keep each component focused on a single responsibility.
 
-- Read songs.json
-- Generate embedding text
-- Build vector database
-- Retrieve Top-K songs
-- Easy to extend into Agent
+Preserve backward compatibility whenever possible.
 
-Do not start frontend.
+### 6. Current Milestone
 
-Do not build chat UI.
+Recommendation backend is feature complete.
 
-Focus on backend AI capability first.
+Future work should focus on:
+
+- Quality improvements to recommendations and responses
+- Maintainability and code health
+- Frontend integration (clean APIs are already in place via `api.py`)
+- Integration with future Recognition and Composition modules
+- Feedback-driven personalization
+
+Do not implement Recognition or Composition unless explicitly requested.
+
+Do not start frontend unless explicitly requested.

@@ -14,6 +14,9 @@ os.environ["HF_ENDPOINT"] = ""
 from sentence_transformers import SentenceTransformer
 import chromadb
 
+from logger import get_logger
+
+_log = get_logger("retriever")
 
 MODEL_NAME = "BAAI/bge-m3"
 COLLECTION_NAME = "lyra_songs"
@@ -24,13 +27,13 @@ class Retriever:
     def __init__(self, persist_dir: str = PERSIST_DIR):
         self.persist_dir = persist_dir
 
-        print(f"Loading embedding model {MODEL_NAME}...")
+        _log.info(f"Loading embedding model {MODEL_NAME}...")
         self.model = SentenceTransformer(MODEL_NAME, trust_remote_code=False)
 
-        print(f"Loading ChromaDB collection from {persist_dir}...")
+        _log.info(f"Loading ChromaDB collection from {persist_dir}...")
         self.client = chromadb.PersistentClient(path=persist_dir)
         self.collection = self.client.get_collection(COLLECTION_NAME)
-        print(f"Collection '{COLLECTION_NAME}' loaded ({self.collection.count()} songs).")
+        _log.info(f"Collection '{COLLECTION_NAME}' loaded ({self.collection.count()} songs).")
 
     def query(self, text: str, k: int = 5) -> list[dict]:
         """

@@ -35,6 +35,73 @@ def _spinner():
     sys.stdout.flush()
 
 
+def _collect_feedback(last_result):
+    """Prompt the user for quick feedback on the recommendations.
+
+    Saves feedback to ``feedback.jsonl`` via ``FeedbackStore``.
+    """
+    try:
+        fb = input(
+            "  [Feedback] Did these match your mood? (y/n/Enter=skip): "
+        ).strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return
+
+    if fb not in ("y", "n"):
+        return
+
+    try:
+        from feedback import FeedbackStore
+    except ImportError:
+        return
+
+    ranked = last_result["ranked_results"]
+    ratings: dict = {}
+
+    if fb == "y":
+        # All liked
+        for r in ranked:
+            ratings[r.get("title", "")] = "like"
+        FeedbackStore().save(
+            last_result.get("_query", ""),
+            last_result["intent"],
+            ranked,
+            ratings,
+        )
+        print("  Thanks! Glad they resonated. :)")
+
+    elif fb == "n":
+        try:
+            disliked = input(
+                "  Which ones didn't fit? (numbers, e.g. 1,3): "
+            ).strip()
+        except (EOFError, KeyboardInterrupt):
+            return
+
+        dislike_indices = set()
+        for part in disliked.replace("，", ",").split(","):
+            part = part.strip()
+            if part.isdigit():
+                idx = int(part) - 1
+                if 0 <= idx < len(ranked):
+                    dislike_indices.add(idx)
+
+        for i, r in enumerate(ranked):
+            title = r.get("title", "")
+            if i in dislike_indices:
+                ratings[title] = "dislike"
+            else:
+                ratings[title] = "like"
+
+        FeedbackStore().save(
+            last_result.get("_query", ""),
+            last_result["intent"],
+            ranked,
+            ratings,
+        )
+        print("  Thanks! I'll learn from this. :)")
+
+
 def main():
     # Build index if needed
     if not os.path.isdir(PERSIST_DIR):
@@ -57,6 +124,7 @@ def main():
     print()
 
     global SPINNER_DONE
+    last_result = None
 
     while True:
         try:
@@ -77,7 +145,10 @@ def main():
         spinner_thread.start()
 
         try:
-            response = agent.chat(query)
+            # Use recommend() to get structured data for feedback + display
+            last_result = agent.recommend(query)
+            last_result["_query"] = query  # stash for feedback
+            response = last_result["response_text"]
         finally:
             SPINNER_DONE = True
             spinner_thread.join(timeout=0.5)
@@ -85,6 +156,11 @@ def main():
         print()
         print(response)
         print()
+
+        # ── Quick feedback ──
+        if last_result:
+            _collect_feedback(last_result)
+            print()
 
 
 if __name__ == "__main__":
