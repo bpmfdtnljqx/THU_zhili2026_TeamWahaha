@@ -55,7 +55,7 @@ def _collect_feedback(last_result):
     except ImportError:
         return
 
-    ranked = last_result["ranked_results"]
+    ranked = last_result["recommendations"]
     ratings: dict = {}
 
     if fb == "y":
@@ -148,7 +148,7 @@ def main():
             # Use recommend() to get structured data for feedback + display
             last_result = agent.recommend(query)
             last_result["_query"] = query  # stash for feedback
-            response = last_result["response_text"]
+            response = last_result["response"]
         finally:
             SPINNER_DONE = True
             spinner_thread.join(timeout=0.5)

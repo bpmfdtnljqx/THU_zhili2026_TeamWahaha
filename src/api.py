@@ -41,17 +41,14 @@ def recommend(user_input: str) -> Dict[str, Any]:
     Returns a fully JSON-serializable dict::
 
         {
+            "success": True,
+            "module": "recommendation",
+            "query": "今天心情很低落",
             "intent": {...},
-            "candidates": [...],
-            "ranked_results": [...],
-            "response_text": "...",
-            "metadata": {
-                "pipeline_time_s": 3.5,
-                "stages": {"planner_s": 0.8, ...},
-                "candidate_count": 15,
-                "result_count": 5,
-                "cache_info": {...}
-            }
+            "recommendations": [...],
+            "response": "...",
+            "timing": {"total_s": 3.5, "planner_s": 0.8, ...},
+            "metadata": {"candidate_count": 15, "result_count": 5, "cache_info": {...}}
         }
     """
     return _get_agent().recommend(user_input)

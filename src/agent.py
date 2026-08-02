@@ -130,11 +130,14 @@ class LyraAgent:
         -------
         dict
             Fully JSON-serializable dict with keys:
+            - **success**: ``True`` if the pipeline completed
+            - **module**: ``"recommendation"``
+            - **query**: the original user input
             - **intent**: structured intent from Planner
-            - **candidates**: Top-15 vector retrieval results
-            - **ranked_results**: Top-5 reranked recommendations
-            - **response_text**: natural conversation response string
-            - **metadata**: timing breakdown, cache info, counts
+            - **recommendations**: Top-5 ranked songs with reasons
+            - **response**: natural conversation response string
+            - **timing**: per-stage timing breakdown
+            - **metadata**: pipeline metadata (cache info, counts)
         """
         t_total = time.time()
 
@@ -207,16 +210,17 @@ class LyraAgent:
         response_text = self.responder.generate(user_input, intent, ranked)
         t_response = round(time.time() - t0, 3)
 
-        # ── Build metadata ──
+        # ── Build result ──
         pipeline_time = round(time.time() - t_total, 3)
+        timing = {
+            "total_s": pipeline_time,
+            "planner_s": t_planner,
+            "retriever_s": t_retriever,
+            "reranker_s": t_reranker,
+            "response_s": t_response,
+        }
+
         metadata = {
-            "pipeline_time_s": pipeline_time,
-            "stages": {
-                "planner_s": t_planner,
-                "retriever_s": t_retriever,
-                "reranker_s": t_reranker,
-                "response_s": t_response,
-            },
             "candidate_count": len(candidates),
             "result_count": len(ranked),
             "cache_info": self.reranker.cache_stats,
@@ -227,10 +231,13 @@ class LyraAgent:
                    f"reranker={t_reranker:.3f} response={t_response:.3f})")
 
         return _make_serializable({
+            "success": True,
+            "module": "recommendation",
+            "query": user_input,
             "intent": intent,
-            "candidates": candidates,
-            "ranked_results": ranked,
-            "response_text": response_text,
+            "recommendations": ranked,
+            "response": response_text,
+            "timing": timing,
             "metadata": metadata,
         })
 
@@ -251,7 +258,7 @@ class LyraAgent:
             Formatted multi-line string ready for terminal display.
         """
         result = self.recommend(user_input)
-        return result["response_text"]
+        return result["response"]
 
     # ------------------------------------------------------------------
     # Convenience

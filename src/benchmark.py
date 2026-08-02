@@ -249,7 +249,7 @@ def run_diversity_check() -> None:
 
     for query in TEST_QUERIES:
         result = agent.recommend(query)
-        ranked = result["ranked_results"]
+        ranked = result["recommendations"]
 
         # Compute pairwise Jaccard distances
         scores = _compute_diversity(ranked)
@@ -370,7 +370,7 @@ def run_judge_evaluation() -> None:
 
     for query in TEST_QUERIES:
         result = agent.recommend(query)
-        ranked = result["ranked_results"]
+        ranked = result["recommendations"]
 
         # Build evaluation input
         rec_text = "\n".join(
@@ -513,20 +513,20 @@ def run_pipeline_timing() -> None:
 
     for query in TEST_QUERIES:
         result = agent.recommend(query)
-        stages = result["metadata"].get("stages", {})
-        total = result["metadata"].get("pipeline_time_s", 0)
+        timing = result.get("timing", {})
+        total = timing.get("total_s", 0)
 
         for key in all_stages:
             if key == "pipeline_time_s":
                 all_stages[key].append(total)
             else:
-                all_stages[key].append(stages.get(key, 0))
+                all_stages[key].append(timing.get(key, 0))
 
         print(f'Query: "{query}"')
-        print(f"  Planner:   {stages.get('planner_s', 0):.2f}s")
-        print(f"  Retriever: {stages.get('retriever_s', 0):.2f}s")
-        print(f"  Reranker:  {stages.get('reranker_s', 0):.2f}s")
-        print(f"  Response:  {stages.get('response_s', 0):.2f}s")
+        print(f"  Planner:   {timing.get('planner_s', 0):.2f}s")
+        print(f"  Retriever: {timing.get('retriever_s', 0):.2f}s")
+        print(f"  Reranker:  {timing.get('reranker_s', 0):.2f}s")
+        print(f"  Response:  {timing.get('response_s', 0):.2f}s")
         print(f"  Total:     {total:.2f}s")
         print()
 
