@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyra — AI Music Companion</title>
+<style>
+  /* ── Reset & variables ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f0f14;
+    --surface:   #1a1a24;
+    --border:    #2a2a3a;
+    --text:      #e4e4ec;
+    --muted:     #8888a0;
+    --accent:    #a78bfa;   /* violet */
+    --accent2:   #f472b6;   /* pink   */
+    --like:      #34d399;
+    --dislike:   #f87171;
+    --radius:    12px;
+    --gap:       16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 720px; margin: 0 auto; padding: 32px var(--gap) 80px; }
+
+  /* ── Header ── */
+  header {
+    text-align: center; padding: 48px 0 32px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header h1 { font-size: 2rem; font-weight: 700; }
+  header p  { font-size: 0.95rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── Status bar ── */
+  .status-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 24px; font-size: 0.85rem;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.ok { background: var(--like); }
+  .status-dot.err { background: var(--dislike); }
+
+  /* ── Input row ── */
+  .input-row { display: flex; gap: 10px; margin-bottom: 28px; }
+  .input-row input {
+    flex: 1; padding: 12px 16px; font-size: 1rem;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input::placeholder { color: var(--muted); }
+  .input-row button {
+    padding: 12px 28px; font-size: 1rem; font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: var(--radius);
+    cursor: pointer; white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .input-row button:hover { opacity: 0.9; }
+  .input-row button:active { transform: scale(0.97); }
+  .input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── States ── */
+  .state { display: none; }
+
+  /* Loading */
+  .loading {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 48px 0; color: var(--muted);
+  }
+  .spinner {
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-banner {
+    padding: 14px 18px; background: rgba(248,113,113,.12);
+    border: 1px solid rgba(248,113,113,.3);
+    border-radius: var(--radius); color: var(--dislike);
+    font-size: 0.9rem; margin-bottom: 20px;
+  }
+
+  /* Empty */
+  .empty-state {
+    text-align: center; padding: 48px 0; color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.95rem; }
+
+  /* ── Results ── */
+  .results { display: none; }
+
+  .ai-response {
+    padding: 20px 22px; background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin-bottom: 24px; font-size: 0.95rem; line-height: 1.8;
+  }
+
+  .song-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .song-card {
+    display: flex; gap: 16px; padding: 18px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); transition: border-color 0.2s;
+  }
+  .song-card:hover { border-color: var(--accent); }
+
+  .song-rank {
+    flex-shrink: 0; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 0.85rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+  }
+
+  .song-body { flex: 1; min-width: 0; }
+  .song-title  { font-size: 1.05rem; font-weight: 600; }
+  .song-artist { color: var(--accent); font-weight: 500; }
+  .song-meta   { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+  .song-reason { margin-top: 8px; font-size: 0.9rem; line-height: 1.6; }
+  .song-reason::before { content: '💭 '; }
+
+  .song-actions {
+    display: flex; flex-direction: column; gap: 8px;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .song-actions button {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; font-size: 1.1rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-like:hover    { background: rgba(52,211,153,.15); border-color: var(--like); }
+  .btn-dislike:hover { background: rgba(248,113,113,.15); border-color: var(--dislike); }
+  .btn-like.active    { background: rgba(52,211,153,.25); border-color: var(--like); }
+  .btn-dislike.active { background: rgba(248,113,113,.25); border-color: var(--dislike); }
+
+  /* Feedback toast */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 10px 24px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; font-size: 0.9rem; color: var(--text);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── Responsive ── */
+  @media (max-width: 520px) {
+    .input-row { flex-direction: column; }
+    .song-card { flex-direction: column; }
+    .song-rank  { align-self: flex-start; }
+    .song-actions { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>&#x1F3B5; Lyra</h1>
+    <p>Describe your mood or situation — discover songs that understand you</p>
+  </header>
+
+  <!-- Backend status -->
+  <div class="status-bar" id="statusBar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Checking backend...</span>
+  </div>
+
+  <!-- Input -->
+  <div class="input-row">
+    <input
+      id="queryInput"
+      type="text"
+      placeholder="e.g. 加班到凌晨，不想听太吵的歌……"
+      maxlength="2000"
+      autocomplete="off"
+    >
+    <button id="recommendBtn" onclick="doRecommend()">Recommend</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Lyra is listening to your mood...</span>
+  </div>
+
+  <!-- Error -->
+  <div class="error-banner" id="errorBanner" style="display:none;"></div>
+
+  <!-- Empty placeholder -->
+  <div class="empty-state" id="emptyState">
+    <div class="icon">&#x1F3A7;</div>
+    <p>Enter how you feel and hit <strong>Recommend</strong></p>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="ai-response" id="aiResponse"></div>
+    <div class="song-list" id="songList"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+// ── Config ──
+const API = 'http://127.0.0.1:8000';
+
+// ── State ──
+let currentResult = null;          // last successful recommend response
+let ratings = {};                  // title -> 'like' | 'dislike'
+
+// ── DOM refs ──
+const $ = id => document.getElementById(id);
+const queryInput   = $('queryInput');
+const recommendBtn = $('recommendBtn');
+const loadingEl    = $('loading');
+const errorBanner  = $('errorBanner');
+const emptyState   = $('emptyState');
+const resultsEl    = $('results');
+const aiResponse   = $('aiResponse');
+const songList     = $('songList');
+const statusDot    = $('statusDot');
+const statusText   = $('statusText');
+const toast        = $('toast');
+
+// ── Init ──
+window.addEventListener('DOMContentLoaded', checkHealth);
+queryInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doRecommend();
+});
+
+// ── Health check ──
+async function checkHealth() {
+  try {
+    const r = await fetch(API + '/health');
+    const d = await r.json();
+    if (d.status === 'ok') {
+      setStatus('ok', 'Backend connected — recommendation ready');
+    } else {
+      setStatus('err', 'Backend returned unexpected status');
+    }
+  } catch {
+    setStatus('err', 'Backend unreachable — start with: uvicorn backend.app:app --reload');
+  }
+}
+
+function setStatus(state, msg) {
+  statusDot.className = 'status-dot ' + (state === 'ok' ? 'ok' : 'err');
+  statusText.textContent = msg;
+}
+
+// ── Recommend ──
+async function doRecommend() {
+  const query = queryInput.value.trim();
+  if (!query) return;
+
+  // UI: enter loading
+  setLoading(true);
+
+  try {
+    const r = await fetch(API + '/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_input: query }),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+    }
+
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'Recommendation failed');
+
+    currentResult = data;
+    ratings = {};   // reset ratings for new session
+    renderResults(data);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── Render ──
+function renderResults(data) {
+  hideError();
+  hideEmpty();
+  resultsEl.style.display = 'block';
+
+  // AI response text
+  aiResponse.textContent = data.response || '';
+
+  // Song cards
+  songList.innerHTML = '';
+  const recs = data.recommendations || [];
+  if (recs.length === 0) {
+    songList.innerHTML = '<div class="empty-state"><p>No songs matched. Try a different description.</p></div>';
+  }
+
+  recs.forEach((song, i) => {
+    const card = document.createElement('div');
+    card.className = 'song-card';
+    card.innerHTML = `
+      <div class="song-rank">${i + 1}</div>
+      <div class="song-body">
+        <div class="song-title">${esc(song.title)} <span class="song-artist">— ${esc(song.artist)}</span></div>
+        <div class="song-meta">${esc(song.album || '')}${song.year ? ' (' + esc(song.year) + ')' : ''}  ·  ${esc(song.genre || '')}</div>
+        <div class="song-reason">${esc(song.reason || '')}</div>
+      </div>
+      <div class="song-actions">
+        <button class="btn-like"    data-title="${escAttr(song.title)}" title="Like">&#x1F44D;</button>
+        <button class="btn-dislike" data-title="${escAttr(song.title)}" title="Dislike">&#x1F44E;</button>
+      </div>`;
+    songList.appendChild(card);
+  });
+
+  // Attach rating handlers
+  songList.querySelectorAll('.btn-like').forEach(b =>
+    b.addEventListener('click', () => rateSong(b.dataset.title, 'like', b)));
+  songList.querySelectorAll('.btn-dislike').forEach(b =>
+    b.addEventListener('click', () => rateSong(b.dataset.title, 'dislike', b)));
+
+  // Scroll results into view
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function rateSong(title, rating, btnEl) {
+  // Toggle off
+  if (ratings[title] === rating) {
+    delete ratings[title];
+    btnEl.classList.remove('active');
+  } else {
+    ratings[title] = rating;
+    // Update active styling on both buttons for this song
+    const card = btnEl.closest('.song-card');
+    card.querySelector('.btn-like').classList.toggle('active', rating === 'like');
+    card.querySelector('.btn-dislike').classList.toggle('active', rating === 'dislike');
+  }
+  submitFeedback();
+}
+
+async function submitFeedback() {
+  if (!currentResult) return;
+  if (Object.keys(ratings).length === 0) return;
+
+  try {
+    const r = await fetch(API + '/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_query: currentResult.query || '',
+        song_titles: (currentResult.recommendations || []).map(s => s.title),
+        ratings: ratings,
+      }),
+    });
+    const d = await r.json();
+    if (d.success) showToast('Feedback sent — thank you!');
+  } catch {
+    // Silently ignore — feedback is best-effort
+  }
+}
+
+// ── UI helpers ──
+function setLoading(on) {
+  loadingEl.style.display = on ? 'flex' : 'none';
+  recommendBtn.disabled = on;
+  if (on) {
+    hideError();
+    resultsEl.style.display = 'none';
+  }
+}
+
+function showError(msg) {
+  errorBanner.textContent = msg || 'Something went wrong.';
+  errorBanner.style.display = 'block';
+  hideEmpty();
+  resultsEl.style.display = 'none';
+}
+
+function hideError()  { errorBanner.style.display = 'none'; }
+function hideEmpty()  { emptyState.style.display = 'none'; }
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._tid);
+  toast._tid = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function esc(s) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(s));
+  return div.innerHTML;
+}
+
+function escAttr(s) {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+</body>
+</html>
