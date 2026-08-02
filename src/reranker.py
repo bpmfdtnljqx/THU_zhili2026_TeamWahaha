@@ -505,6 +505,7 @@ class DeepSeekReranker:
         ]
 
         last_error = None
+        auth_failure = False  # set when 401/403 — skip model fallback loop
 
         for attempt, model_name in enumerate(models_to_try):
             payload["model"] = model_name
@@ -602,17 +603,27 @@ class DeepSeekReranker:
                             f"HTTP 401 Unauthorized — API key is invalid or expired. "
                             f"Key ends with: ...{self.api_key[-6:] if self.api_key else 'N/A'}"
                         )
-                        _log.debug(f"[API] ❌ {last_error}")
-                        # Don't retry on auth errors
-                        raise RuntimeError(last_error)
+                        _log.debug(
+                            f"[API] ⚠ {last_error} "
+                            f"— will fall back to vector ranking"
+                        )
+                        # Auth failure — skip retries and model fallbacks
+                        # (same key for all models).  The caller will fall
+                        # back to vector Top-5 gracefully.
+                        auth_failure = True
+                        break
 
                     elif status == 403:
                         last_error = (
                             f"HTTP 403 Forbidden — API key lacks permission "
                             f"or account is restricted."
                         )
-                        _log.debug(f"[API] ❌ {last_error}")
-                        raise RuntimeError(last_error)
+                        _log.debug(
+                            f"[API] ⚠ {last_error} "
+                            f"— will fall back to vector ranking"
+                        )
+                        auth_failure = True
+                        break
 
                     elif status == 429:
                         retry_after = response.headers.get("Retry-After", "unknown")
@@ -665,6 +676,10 @@ class DeepSeekReranker:
                     last_error = f"Request error: {re}"
                     _log.debug(f"[API] ⚠ {last_error}")
                     break
+
+            # ── Auth failure → stop trying models (same key for all) ──
+            if auth_failure:
+                break
 
         # ── All attempts exhausted ──
         error_msg = (

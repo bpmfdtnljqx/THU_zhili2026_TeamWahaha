@@ -8,6 +8,11 @@ All business logic stays in src/api.py and its dependencies.
 import os
 import sys
 
+from dotenv import load_dotenv
+
+# Load .env before any config values are read.
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

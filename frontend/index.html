@@ -225,7 +225,11 @@
 
 <script>
 // ── Config ──
-const API = 'http://127.0.0.1:8000';
+// Override via query parameter:  index.html?api=http://other-host:8000
+const API = new URLSearchParams(window.location.search).get('api')
+         || 'http://127.0.0.1:8000';
+
+const REQUEST_TIMEOUT_MS = 30_000;
 
 // ── State ──
 let currentResult = null;          // last successful recommend response
@@ -272,9 +276,24 @@ function setStatus(state, msg) {
 }
 
 // ── Recommend ──
+let _abortController = null;  // held so setLoading(false) can abort mid-flight
+
 async function doRecommend() {
   const query = queryInput.value.trim();
   if (!query) return;
+
+  // Prevent duplicate requests from rapid clicks / Enter mashing.
+  if (recommendBtn.disabled) return;
+
+  // Abort any in-flight request before starting a new one.
+  if (_abortController) {
+    _abortController.abort();
+    _abortController = null;
+  }
+
+  const controller = new AbortController();
+  _abortController = controller;
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   // UI: enter loading
   setLoading(true);
@@ -284,7 +303,10 @@ async function doRecommend() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_input: query }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timer);
 
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
@@ -298,8 +320,14 @@ async function doRecommend() {
     ratings = {};   // reset ratings for new session
     renderResults(data);
   } catch (e) {
-    showError(e.message);
+    if (e.name === 'AbortError') {
+      showError('Request timed out. The server is taking too long — please try again.');
+    } else {
+      showError(e.message);
+    }
   } finally {
+    clearTimeout(timer);
+    _abortController = null;
     setLoading(false);
   }
 }
