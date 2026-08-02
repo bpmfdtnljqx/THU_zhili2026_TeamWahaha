@@ -6,6 +6,27 @@
 
 ---
 
+## 🚀 快速开始 (Quick Start)
+
+详见 **[SETUP_Guide.md](SETUP_Guide.md)** — 包含完整的环境搭建、依赖安装、后端启动和问题排查说明。
+
+### 三步跑起来
+
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 配置 API Key（在 .env 中设置 DEEPSEEK_API_KEY）
+
+# 3. 构建索引 + 启动后端
+python src/build_index.py
+uvicorn backend.app:app --reload
+```
+
+然后打开 `frontend/index.html` 即可使用。
+
+---
+
 ## ✨ 它能做什么？
 
 ### 🎤 听歌识曲

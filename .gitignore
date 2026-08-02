@@ -1,4 +1,35 @@
+# ── Virtual environment ──
 .venv/
-chroma_db/
+venv/
+env/
+
+# ── Python cache ──
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+
+# ── Environment & secrets ──
 .env
+.env.local
+*.env.local
+
+# ── Generated / runtime data ──
+chroma_db/
+feedback.jsonl
+
+# ── IDE & editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Claude Code (session-local, not shared) ──
+.claude/settings.local.json
