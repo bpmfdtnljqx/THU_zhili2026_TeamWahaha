@@ -1,8 +1,8 @@
 # Lyra API Specification
 
-> Version: 1.0
-> Date: 2026-08-02
-> Status: **Recommendation — Stable. Recognition / Composition — Reserved.**
+> Version: 1.1
+> Date: 2026-08-07
+> Status: **Recommendation — Stable. Recognition / Composition — Placeholder (200 OK).**
 
 ---
 
@@ -215,89 +215,109 @@ print(text)  # display-ready string
 
 ---
 
-## Recognition (Reserved)
+## Recognition (Placeholder)
 
-**Status:** Reserved for future implementation. Do NOT implement.
+**Status:** Placeholder — returns an empty result via the standard response envelope. Ready for model integration.
 
-**Purpose:** Identify a song from audio input (humming, recording, or file upload).
+**Purpose:** Identify a song from an uploaded audio file (mp3, wav, flac, ogg, m4a, webm).
 
-### Planned Input
+### Input
+
+`POST /recognition` — multipart/form-data file upload.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `audio` | `bytes` or `string` | Audio data (WAV/PCM) or base64-encoded audio |
-| `sample_rate` | `int` | Audio sample rate in Hz (optional, default 16000) |
-| `duration_s` | `float` | Audio duration in seconds (optional) |
+| `file` | `file` (required) | Audio file. Supported formats: mp3, wav, flac, ogg, m4a, webm. |
 
-### Planned Output
+### Output (current placeholder)
 
 ```json
 {
   "success": true,
   "module": "recognition",
-  "results": [
-    {
-      "title": "夜曲",
-      "artist": "周杰伦",
-      "confidence": 0.95,
-      "match_segment": { "start_s": 12.3, "end_s": 20.1 }
-    }
-  ],
-  "timing": {
-    "total_s": 1.2,
-    "fingerprint_s": 0.3,
-    "search_s": 0.9
+  "data": {
+    "title": "",
+    "artist": "",
+    "confidence": 0.0
   },
-  "metadata": {
-    "algorithm": "acoustid",
-    "database_version": "1.0"
-  }
+  "message": "Recognition service placeholder"
 }
 ```
 
-Exact schema is subject to change when implemented.
+**When real model is integrated**, `data.title`, `data.artist`, and `data.confidence` will be populated:
+
+```json
+{
+  "success": true,
+  "module": "recognition",
+  "data": {
+    "title": "夜曲",
+    "artist": "周杰伦",
+    "confidence": 0.95
+  },
+  "message": "Recognition completed"
+}
+```
+
+### Integration point
+
+Service layer: `src/recognition/service.py` → `Recognizer.recognize(audio_file, filename)`
+
+Router: `backend/routers/recognition.py` (thin HTTP wrapper — should not need changes).
 
 ---
 
-## Composition (Reserved)
+## Composition (Placeholder)
 
-**Status:** Reserved for future implementation. Do NOT implement.
+**Status:** Placeholder — returns an empty result via the standard response envelope. Ready for model integration.
 
-**Purpose:** Generate original music based on user-provided parameters (style, mood, instrumentation).
+**Purpose:** Generate original music from a text prompt with optional creative constraints.
 
-### Planned Input
+### Input
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `prompt` | `string` | Natural-language description of desired music |
-| `style` | `string` | Musical style reference (optional) |
-| `duration_s` | `int` | Desired duration in seconds (optional, default 30) |
-| `tempo` | `int` | BPM (optional) |
-| `key` | `string` | Musical key (optional, e.g., "C major") |
+`POST /composition` — JSON body.
 
-### Planned Output
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `prompt` | `string` | yes | — | Natural-language description of desired music (max 1000 chars) |
+| `duration` | `int` | no | 30 | Target duration in seconds (1–300) |
+| `style` | `string` | no | `null` | Musical style reference (max 200 chars) |
+| `tempo` | `int` | no | `null` | BPM hint (20–300) |
+| `key` | `string` | no | `null` | Musical key hint (e.g. "C major", max 30 chars) |
+
+### Output (current placeholder)
 
 ```json
 {
   "success": true,
   "module": "composition",
-  "audio_url": "https://...",
-  "waveform_url": "https://...",
-  "metadata": {
-    "style": "lo-fi hip hop",
-    "tempo": 85,
-    "key": "Am",
-    "duration_s": 30
+  "data": {
+    "audio_url": null,
+    "duration": 30
   },
-  "timing": {
-    "total_s": 8.5,
-    "generation_s": 7.2,
-    "encoding_s": 1.3
-  }
+  "message": "Composition service placeholder"
 }
 ```
 
-Exact schema is subject to change when implemented.
+**When real model is integrated**, `data.audio_url` will point to the generated file:
+
+```json
+{
+  "success": true,
+  "module": "composition",
+  "data": {
+    "audio_url": "/static/generated/a1b2c3d4.wav",
+    "duration": 28
+  },
+  "message": "Composition completed"
+}
+```
+
+### Integration point
+
+Service layer: `src/composition/service.py` → `Composer.generate(prompt, duration, style, tempo, key)`
+
+Router: `backend/routers/composition.py` (thin HTTP wrapper — should not need changes).
 
 ---
 

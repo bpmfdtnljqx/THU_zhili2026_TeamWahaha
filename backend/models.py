@@ -150,19 +150,81 @@ class HealthResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class RecognitionRequest(BaseModel):
-    """POST /recognition request body (reserved for future implementation)."""
+# ── Recognition ─────────────────────────────────────────────────────────
 
-    audio: str = Field(..., description="Base64-encoded audio data")
-    sample_rate: int = Field(16000, description="Audio sample rate in Hz")
+
+class RecognitionData(BaseModel):
+    """Recognition result payload."""
+
+    title: str = Field("", description="Recognised song title, empty if unknown")
+    artist: str = Field("", description="Recognised artist, empty if unknown")
+    confidence: float = Field(
+        0.0, ge=0.0, le=1.0, description="Confidence score 0.0–1.0"
+    )
+
+
+class RecognitionResponse(BaseModel):
+    """POST /recognition response envelope."""
+
+    success: bool = True
+    module: str = "recognition"
+    data: RecognitionData = Field(default_factory=RecognitionData)
+    message: str = "Recognition completed"
+
+
+# ── Composition ─────────────────────────────────────────────────────────
 
 
 class CompositionRequest(BaseModel):
-    """POST /composition request body (reserved for future implementation)."""
+    """POST /composition request body."""
 
-    prompt: str = Field(..., description="Natural-language description of desired music")
-    style: Optional[str] = Field(None, description="Musical style reference")
-    duration_s: int = Field(30, description="Desired duration in seconds")
+    prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Natural-language description of desired music",
+        examples=["Create a relaxing piano melody"],
+    )
+    duration: int = Field(
+        30,
+        ge=1,
+        le=300,
+        description="Target duration in seconds (1–300)",
+    )
+    style: Optional[str] = Field(
+        None,
+        max_length=200,
+        description="Optional musical style reference",
+    )
+    tempo: Optional[int] = Field(
+        None,
+        ge=20,
+        le=300,
+        description="Optional BPM hint",
+    )
+    key: Optional[str] = Field(
+        None,
+        max_length=30,
+        description='Optional musical key hint (e.g. "C major")',
+    )
+
+
+class CompositionData(BaseModel):
+    """Composition result payload."""
+
+    audio_url: Optional[str] = Field(
+        None, description="URL to generated audio file, null if not yet generated"
+    )
+    duration: int = Field(0, description="Actual duration in seconds")
+
+
+class CompositionResponse(BaseModel):
+    """POST /composition response envelope."""
+
+    success: bool = True
+    module: str = "composition"
+    data: CompositionData = Field(default_factory=CompositionData)
+    message: str = "Composition completed"
 
 
 # ---------------------------------------------------------------------------

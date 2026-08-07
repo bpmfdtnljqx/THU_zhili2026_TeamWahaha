@@ -1,38 +1,66 @@
 """
-Composition router (placeholder).
+Composition router.
 
-POST /composition — reserved for the future AI Composition module.
-Returns HTTP 501 Not Implemented until the module is built.
+POST /composition — delegates to src.composition.Composer.
+
+Accepts a text prompt with optional creative parameters and returns
+a composition result. Currently the composer is a placeholder; when the
+teammate's model is ready, only ``service.py`` needs to change — this
+router stays the same.
 """
 
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+import sys
+import os
 
-from backend.models import CompositionRequest
+_src_dir = os.path.join(os.path.dirname(__file__), "..", "..", "src")
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
+
+from fastapi import APIRouter
+
+from backend.exception_handlers import LyraException
+from backend.models import CompositionData, CompositionRequest, CompositionResponse
 
 router = APIRouter(tags=["composition"])
 
 
-@router.post("/composition")
+@router.post("/composition", response_model=CompositionResponse)
 def compose(request: CompositionRequest):
-    """Generate original music from a prompt. NOT YET IMPLEMENTED.
+    """Generate original music from a text prompt.
 
-    Future integration point for the Composition module.
-    When implemented:
-      1. Import the composer (e.g. ``from composition import Composer``)
-      2. Call it with request.prompt, request.style, and request.duration_s
-      3. Return the standard response envelope with module="composition"
-
-    See docs/API_SPEC.md §Composition for the planned schema.
+    **Placeholder:** currently returns an empty result. The real
+    generation model will be integrated by replacing
+    ``src/composition/service.py``.
     """
-    return JSONResponse(
-        status_code=501,
-        content={
-            "success": False,
-            "module": "composition",
-            "error": (
-                "AI Composition is not yet implemented. "
-                "This endpoint is reserved for future integration."
-            ),
-        },
+    # ── Import the composer ─────────────────────────────────────────
+    try:
+        from composition import Composer
+    except ImportError as e:
+        raise LyraException(
+            "Composition module not available",
+            detail=f"Could not import src.composition: {e}",
+        )
+
+    # ── Delegate to service layer ───────────────────────────────────
+    try:
+        composer = Composer()
+        result = composer.generate(
+            prompt=request.prompt,
+            duration=request.duration,
+            style=request.style or "",
+            tempo=request.tempo or 0,
+            key=request.key or "",
+        )
+    except Exception as e:
+        raise LyraException(
+            "Composition failed",
+            detail=str(e),
+        )
+
+    # ── Build response ──────────────────────────────────────────────
+    return CompositionResponse(
+        data=CompositionData(**result),
+        message="Composition service placeholder"
+        if result.get("audio_url") is None
+        else "Composition completed",
     )

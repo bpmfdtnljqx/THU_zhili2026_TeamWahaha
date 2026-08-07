@@ -43,15 +43,38 @@
   header h1 { font-size: 2rem; font-weight: 700; }
   header p  { font-size: 0.95rem; color: var(--muted); margin-top: 4px; }
 
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 4px;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 12px; font-size: 0.9rem; font-weight: 500;
+    border: none; background: transparent; color: var(--muted);
+    border-radius: calc(var(--radius) - 2px); cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-weight: 600;
+  }
+
   /* ── Status bar ── */
   .status-bar {
     display: flex; align-items: center; gap: 8px; padding: 10px 16px;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); margin-bottom: 24px; font-size: 0.85rem;
+    border-radius: var(--radius); margin: 12px 0 20px; font-size: 0.85rem;
   }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .status-dot.ok { background: var(--like); }
   .status-dot.err { background: var(--dislike); }
+
+  /* ── Panels ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
 
   /* ── Input row ── */
   .input-row { display: flex; gap: 10px; margin-bottom: 28px; }
@@ -73,6 +96,59 @@
   .input-row button:hover { opacity: 0.9; }
   .input-row button:active { transform: scale(0.97); }
   .input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── File upload area ── */
+  .file-upload-area {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 36px 24px; margin-bottom: 20px;
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    background: var(--surface); cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .file-upload-area:hover { border-color: var(--accent); background: rgba(167,139,250,.04); }
+  .file-upload-area.has-file { border-style: solid; border-color: var(--like); }
+  .file-upload-area .upload-icon { font-size: 2.2rem; }
+  .file-upload-area .upload-hint { font-size: 0.9rem; color: var(--muted); text-align: center; }
+  .file-upload-area .upload-filename { font-size: 0.95rem; color: var(--text); font-weight: 500; }
+  .file-upload-area input[type="file"] { display: none; }
+
+  /* ── Composition form ── */
+  .comp-form {
+    display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;
+  }
+  .comp-form label {
+    font-size: 0.85rem; font-weight: 500; color: var(--muted);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .comp-form label span.optional { font-weight: 400; font-size: 0.78rem; }
+  .comp-form textarea,
+  .comp-form input[type="text"],
+  .comp-form input[type="number"] {
+    padding: 12px 14px; font-size: 0.95rem; font-family: inherit;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    outline: none; transition: border-color 0.2s; resize: vertical;
+  }
+  .comp-form textarea:focus,
+  .comp-form input:focus { border-color: var(--accent); }
+  .comp-form textarea::placeholder { color: var(--muted); }
+  .comp-form textarea { min-height: 80px; }
+  .comp-form .form-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .comp-form .submit-row {
+    display: flex; justify-content: flex-end;
+  }
+  .comp-form .submit-row button {
+    padding: 12px 32px; font-size: 1rem; font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: var(--radius);
+    cursor: pointer; white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .comp-form .submit-row button:hover { opacity: 0.9; }
+  .comp-form .submit-row button:active { transform: scale(0.97); }
+  .comp-form .submit-row button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ── States ── */
   .state { display: none; }
@@ -152,6 +228,36 @@
   .btn-like.active    { background: rgba(52,211,153,.25); border-color: var(--like); }
   .btn-dislike.active { background: rgba(248,113,113,.25); border-color: var(--dislike); }
 
+  /* ── Module result cards (Recognition / Composition) ── */
+  .module-result {
+    padding: 22px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .module-result .result-title {
+    font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;
+  }
+  .module-result .result-row {
+    display: flex; justify-content: space-between; padding: 8px 0;
+    border-bottom: 1px solid var(--border); font-size: 0.92rem;
+  }
+  .module-result .result-row:last-child { border-bottom: none; }
+  .module-result .result-label { color: var(--muted); }
+  .module-result .result-value { font-weight: 500; }
+
+  /* Placeholder badge */
+  .placeholder-badge {
+    display: inline-block; padding: 3px 10px; margin-top: 10px;
+    font-size: 0.78rem; font-weight: 500;
+    background: rgba(167,139,250,.12); color: var(--accent);
+    border: 1px solid rgba(167,139,250,.25);
+    border-radius: 20px;
+  }
+
+  /* Audio player */
+  .audio-player {
+    width: 100%; margin-top: 10px;
+  }
+
   /* Feedback toast */
   .toast {
     position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
@@ -163,7 +269,9 @@
 
   /* ── Responsive ── */
   @media (max-width: 520px) {
+    .tabs { flex-direction: column; gap: 2px; }
     .input-row { flex-direction: column; }
+    .comp-form .form-row { grid-template-columns: 1fr; }
     .song-card { flex-direction: column; }
     .song-rank  { align-self: flex-start; }
     .song-actions { flex-direction: row; }
@@ -176,8 +284,15 @@
   <!-- Header -->
   <header>
     <h1>&#x1F3B5; Lyra</h1>
-    <p>Describe your mood or situation — discover songs that understand you</p>
+    <p>Your AI music companion — recommend, recognize, compose</p>
   </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="recommend" onclick="switchTab('recommend')">&#x1F3A7; Recommend</button>
+    <button class="tab-btn"        data-tab="recognize" onclick="switchTab('recognize')">&#x1F3A4; Recognize</button>
+    <button class="tab-btn"        data-tab="compose"   onclick="switchTab('compose')">&#x1F3B9; Compose</button>
+  </nav>
 
   <!-- Backend status -->
   <div class="status-bar" id="statusBar">
@@ -185,40 +300,139 @@
     <span id="statusText">Checking backend...</span>
   </div>
 
-  <!-- Input -->
-  <div class="input-row">
-    <input
-      id="queryInput"
-      type="text"
-      placeholder="e.g. 加班到凌晨，不想听太吵的歌……"
-      maxlength="2000"
-      autocomplete="off"
-    >
-    <button id="recommendBtn" onclick="doRecommend()">Recommend</button>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- Tab 1: Recommendation -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="panel active" id="panelRecommend">
+
+    <!-- Input row -->
+    <div class="input-row">
+      <input
+        id="queryInput"
+        type="text"
+        placeholder="e.g. 加班到凌晨，不想听太吵的歌……"
+        maxlength="2000"
+        autocomplete="off"
+      >
+      <button id="recommendBtn" onclick="doRecommend()">Recommend</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="recommendLoading">
+      <div class="spinner"></div>
+      <span>Lyra is listening to your mood...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="recommendError" style="display:none;"></div>
+
+    <!-- Empty placeholder -->
+    <div class="empty-state" id="recommendEmpty">
+      <div class="icon">&#x1F3A7;</div>
+      <p>Enter how you feel and hit <strong>Recommend</strong></p>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="recommendResults">
+      <div class="ai-response" id="aiResponse"></div>
+      <div class="song-list" id="songList"></div>
+    </div>
+
   </div>
 
-  <!-- Loading -->
-  <div class="loading" id="loading">
-    <div class="spinner"></div>
-    <span>Lyra is listening to your mood...</span>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- Tab 2: Recognition -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="panel" id="panelRecognize">
+
+    <!-- File upload area -->
+    <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">&#x1F3B6;</div>
+      <div class="upload-hint" id="uploadHint">
+        Click to upload an audio file<br>
+        <small>Supported: mp3, wav, flac, ogg, m4a</small>
+      </div>
+      <div class="upload-filename" id="uploadFilename" style="display:none;"></div>
+      <input type="file" id="fileInput" accept=".mp3,.wav,.flac,.ogg,.oga,.m4a,audio/*"
+             onchange="onFileSelected(event)">
+    </div>
+
+    <div class="input-row">
+      <button id="recognizeBtn" onclick="doRecognize()" disabled>Recognize</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="recognizeLoading">
+      <div class="spinner"></div>
+      <span>Listening to your audio...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="recognizeError" style="display:none;"></div>
+
+    <!-- Results -->
+    <div class="results" id="recognizeResults">
+      <div class="module-result" id="recognizeData"></div>
+    </div>
+
   </div>
 
-  <!-- Error -->
-  <div class="error-banner" id="errorBanner" style="display:none;"></div>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- Tab 3: Composition -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="panel" id="panelCompose">
 
-  <!-- Empty placeholder -->
-  <div class="empty-state" id="emptyState">
-    <div class="icon">&#x1F3A7;</div>
-    <p>Enter how you feel and hit <strong>Recommend</strong></p>
+    <div class="comp-form">
+      <label>
+        What kind of music do you want? *
+        <textarea id="compPrompt" placeholder="e.g. Create a relaxing piano melody with soft strings..."
+                  maxlength="1000" rows="3"></textarea>
+      </label>
+
+      <div class="form-row">
+        <label>
+          Duration (seconds) <span class="optional">— optional</span>
+          <input type="number" id="compDuration" value="30" min="1" max="300">
+        </label>
+        <label>
+          Style <span class="optional">— optional</span>
+          <input type="text" id="compStyle" placeholder="e.g. jazz, lo-fi" maxlength="200">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          Tempo (BPM) <span class="optional">— optional</span>
+          <input type="number" id="compTempo" placeholder="e.g. 120" min="20" max="300">
+        </label>
+        <label>
+          Key <span class="optional">— optional</span>
+          <input type="text" id="compKey" placeholder="e.g. C major" maxlength="30">
+        </label>
+      </div>
+
+      <div class="submit-row">
+        <button id="composeBtn" onclick="doCompose()">Generate</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="composeLoading">
+      <div class="spinner"></div>
+      <span>Composing your music...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="composeError" style="display:none;"></div>
+
+    <!-- Results -->
+    <div class="results" id="composeResults">
+      <div class="module-result" id="composeData"></div>
+    </div>
+
   </div>
 
-  <!-- Results -->
-  <div class="results" id="results">
-    <div class="ai-response" id="aiResponse"></div>
-    <div class="song-list" id="songList"></div>
-  </div>
-
-  <!-- Toast -->
+  <!-- Toast (shared) -->
   <div class="toast" id="toast"></div>
 
 </div>
@@ -231,37 +445,97 @@ const API = new URLSearchParams(window.location.search).get('api')
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
-// ── State ──
+// ── Recommendation state ──
 let currentResult = null;          // last successful recommend response
 let ratings = {};                  // title -> 'like' | 'dislike'
+let _abortController = null;       // held so setLoading(false) can abort mid-flight
 
-// ── DOM refs ──
+// ── Recognition state ──
+let selectedFile = null;           // File object from <input type="file">
+let _recogAbortController = null;
+
+// ── Composition state ──
+let _compAbortController = null;
+
+// ── Shared DOM refs (used by multiple tabs) ──
 const $ = id => document.getElementById(id);
-const queryInput   = $('queryInput');
-const recommendBtn = $('recommendBtn');
-const loadingEl    = $('loading');
-const errorBanner  = $('errorBanner');
-const emptyState   = $('emptyState');
-const resultsEl    = $('results');
-const aiResponse   = $('aiResponse');
-const songList     = $('songList');
-const statusDot    = $('statusDot');
-const statusText   = $('statusText');
-const toast        = $('toast');
+const statusDot  = $('statusDot');
+const statusText = $('statusText');
+const toast      = $('toast');
+
+// ── Recommendation DOM refs ──
+const queryInput      = $('queryInput');
+const recommendBtn    = $('recommendBtn');
+const recommendLoading = $('recommendLoading');
+const recommendError  = $('recommendError');
+const recommendEmpty  = $('recommendEmpty');
+const recommendResults= $('recommendResults');
+const aiResponse      = $('aiResponse');
+const songList        = $('songList');
+
+// ── Recognition DOM refs ──
+const uploadArea       = $('uploadArea');
+const uploadHint       = $('uploadHint');
+const uploadFilename   = $('uploadFilename');
+const fileInput        = $('fileInput');
+const recognizeBtn     = $('recognizeBtn');
+const recognizeLoading = $('recognizeLoading');
+const recognizeError   = $('recognizeError');
+const recognizeResults = $('recognizeResults');
+const recognizeData    = $('recognizeData');
+
+// ── Composition DOM refs ──
+const compPrompt    = $('compPrompt');
+const compDuration  = $('compDuration');
+const compStyle     = $('compStyle');
+const compTempo     = $('compTempo');
+const compKey       = $('compKey');
+const composeBtn    = $('composeBtn');
+const composeLoading = $('composeLoading');
+const composeError  = $('composeError');
+const composeResults = $('composeResults');
+const composeData   = $('composeData');
 
 // ── Init ──
 window.addEventListener('DOMContentLoaded', checkHealth);
 queryInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') doRecommend();
 });
+// Allow Enter key to submit composition form
+compPrompt.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doCompose(); }
+});
 
-// ── Health check ──
+// ── Tab switching ──
+function switchTab(tab) {
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+
+  // Show / hide panels
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panelId = 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1);
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Health check
+// ═══════════════════════════════════════════════════════════════════
+
 async function checkHealth() {
   try {
     const r = await fetch(API + '/health');
     const d = await r.json();
     if (d.status === 'ok') {
-      setStatus('ok', 'Backend connected — recommendation ready');
+      // Build a status message from module states
+      const mods = d.modules || {};
+      const parts = [];
+      if (mods.recommendation === 'stable') parts.push('Recommendation ready');
+      if (mods.recognition === 'not_implemented') parts.push('Recognition (placeholder)');
+      if (mods.composition === 'not_implemented') parts.push('Composition (placeholder)');
+      setStatus('ok', 'Backend connected — ' + parts.join(' · '));
     } else {
       setStatus('err', 'Backend returned unexpected status');
     }
@@ -275,8 +549,9 @@ function setStatus(state, msg) {
   statusText.textContent = msg;
 }
 
-// ── Recommend ──
-let _abortController = null;  // held so setLoading(false) can abort mid-flight
+// ═══════════════════════════════════════════════════════════════════
+// Tab 1: Recommendation (preserved from original, minimal changes)
+// ═══════════════════════════════════════════════════════════════════
 
 async function doRecommend() {
   const query = queryInput.value.trim();
@@ -296,7 +571,7 @@ async function doRecommend() {
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   // UI: enter loading
-  setLoading(true);
+  setRecommendLoading(true);
 
   try {
     const r = await fetch(API + '/recommend', {
@@ -318,25 +593,24 @@ async function doRecommend() {
 
     currentResult = data;
     ratings = {};   // reset ratings for new session
-    renderResults(data);
+    renderRecommendResults(data);
   } catch (e) {
     if (e.name === 'AbortError') {
-      showError('Request timed out. The server is taking too long — please try again.');
+      showRecommendError('Request timed out. The server is taking too long — please try again.');
     } else {
-      showError(e.message);
+      showRecommendError(e.message);
     }
   } finally {
     clearTimeout(timer);
     _abortController = null;
-    setLoading(false);
+    setRecommendLoading(false);
   }
 }
 
-// ── Render ──
-function renderResults(data) {
-  hideError();
-  hideEmpty();
-  resultsEl.style.display = 'block';
+function renderRecommendResults(data) {
+  hideRecommendError();
+  recommendEmpty.style.display = 'none';
+  recommendResults.style.display = 'block';
 
   // AI response text
   aiResponse.textContent = data.response || '';
@@ -372,7 +646,7 @@ function renderResults(data) {
     b.addEventListener('click', () => rateSong(b.dataset.title, 'dislike', b)));
 
   // Scroll results into view
-  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  recommendResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function rateSong(title, rating, btnEl) {
@@ -411,25 +685,277 @@ async function submitFeedback() {
   }
 }
 
-// ── UI helpers ──
-function setLoading(on) {
-  loadingEl.style.display = on ? 'flex' : 'none';
+// ── Recommendation UI helpers ──
+function setRecommendLoading(on) {
+  recommendLoading.style.display = on ? 'flex' : 'none';
   recommendBtn.disabled = on;
   if (on) {
-    hideError();
-    resultsEl.style.display = 'none';
+    hideRecommendError();
+    recommendResults.style.display = 'none';
   }
 }
 
-function showError(msg) {
-  errorBanner.textContent = msg || 'Something went wrong.';
-  errorBanner.style.display = 'block';
-  hideEmpty();
-  resultsEl.style.display = 'none';
+function showRecommendError(msg) {
+  recommendError.textContent = msg || 'Something went wrong.';
+  recommendError.style.display = 'block';
+  recommendEmpty.style.display = 'none';
+  recommendResults.style.display = 'none';
 }
 
-function hideError()  { errorBanner.style.display = 'none'; }
-function hideEmpty()  { emptyState.style.display = 'none'; }
+function hideRecommendError() { recommendError.style.display = 'none'; }
+
+// ═══════════════════════════════════════════════════════════════════
+// Tab 2: Recognition
+// ═══════════════════════════════════════════════════════════════════
+
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) {
+    selectedFile = null;
+    uploadArea.classList.remove('has-file');
+    uploadHint.style.display = '';
+    uploadFilename.style.display = 'none';
+    recognizeBtn.disabled = true;
+    return;
+  }
+
+  selectedFile = file;
+  uploadArea.classList.add('has-file');
+  uploadHint.style.display = 'none';
+  uploadFilename.style.display = '';
+  uploadFilename.textContent = file.name + ' (' + formatSize(file.size) + ')';
+  recognizeBtn.disabled = false;
+
+  // Hide previous results
+  recognizeResults.style.display = 'none';
+  hideRecognizeError();
+}
+
+async function doRecognize() {
+  if (!selectedFile) return;
+  if (recognizeBtn.disabled) return;
+
+  // Abort any in-flight request
+  if (_recogAbortController) {
+    _recogAbortController.abort();
+    _recogAbortController = null;
+  }
+
+  const controller = new AbortController();
+  _recogAbortController = controller;
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  setRecognizeLoading(true);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    const r = await fetch(API + '/recognition', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+    }
+
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'Recognition failed');
+
+    renderRecognizeResult(data);
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      showRecognizeError('Request timed out. Please try again.');
+    } else {
+      showRecognizeError(e.message);
+    }
+  } finally {
+    clearTimeout(timer);
+    _recogAbortController = null;
+    setRecognizeLoading(false);
+  }
+}
+
+function renderRecognizeResult(data) {
+  hideRecognizeError();
+  recognizeResults.style.display = 'block';
+
+  const d = data.data || {};
+  const hasResult = d.title && d.artist && d.confidence > 0;
+
+  recognizeData.innerHTML = `
+    <div class="result-title">&#x1F3B6; Recognition Result</div>
+    <div class="result-row">
+      <span class="result-label">Title</span>
+      <span class="result-value">${esc(d.title || '—')}</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Artist</span>
+      <span class="result-value">${esc(d.artist || '—')}</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Confidence</span>
+      <span class="result-value">${d.confidence != null ? (d.confidence * 100).toFixed(1) + '%' : '—'}</span>
+    </div>
+    ${!hasResult ? '<div class="placeholder-badge">&#x2139;&#xFE0F; Demo placeholder — recognition model not yet integrated</div>' : ''}
+  `;
+
+  recognizeResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Recognition UI helpers ──
+function setRecognizeLoading(on) {
+  recognizeLoading.style.display = on ? 'flex' : 'none';
+  recognizeBtn.disabled = on;
+  if (on) {
+    hideRecognizeError();
+    recognizeResults.style.display = 'none';
+  }
+}
+
+function showRecognizeError(msg) {
+  recognizeError.textContent = msg || 'Something went wrong.';
+  recognizeError.style.display = 'block';
+  recognizeResults.style.display = 'none';
+}
+
+function hideRecognizeError() { recognizeError.style.display = 'none'; }
+
+// ═══════════════════════════════════════════════════════════════════
+// Tab 3: Composition
+// ═══════════════════════════════════════════════════════════════════
+
+async function doCompose() {
+  const prompt = compPrompt.value.trim();
+  if (!prompt) {
+    showComposeError('Please enter a description of the music you want.');
+    return;
+  }
+  if (composeBtn.disabled) return;
+
+  // Abort any in-flight request
+  if (_compAbortController) {
+    _compAbortController.abort();
+    _compAbortController = null;
+  }
+
+  const controller = new AbortController();
+  _compAbortController = controller;
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  setComposeLoading(true);
+
+  // Build the request body — only include non-empty optional fields.
+  const body = {
+    prompt: prompt,
+    duration: parseInt(compDuration.value) || 30,
+  };
+  const style = compStyle.value.trim();
+  if (style) body.style = style;
+  const tempo = parseInt(compTempo.value);
+  if (tempo && !isNaN(tempo)) body.tempo = tempo;
+  const key = compKey.value.trim();
+  if (key) body.key = key;
+
+  try {
+    const r = await fetch(API + '/composition', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+    }
+
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'Composition failed');
+
+    renderComposeResult(data, body);
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      showComposeError('Request timed out. Music generation can take time — please try again.');
+    } else {
+      showComposeError(e.message);
+    }
+  } finally {
+    clearTimeout(timer);
+    _compAbortController = null;
+    setComposeLoading(false);
+  }
+}
+
+function renderComposeResult(data, requestBody) {
+  hideComposeError();
+  composeResults.style.display = 'block';
+
+  const d = data.data || {};
+  const hasAudio = d.audio_url != null;
+
+  composeData.innerHTML = `
+    <div class="result-title">&#x1F3B9; Composition Result</div>
+    <div class="result-row">
+      <span class="result-label">Prompt</span>
+      <span class="result-value">${esc(requestBody.prompt)}</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Duration</span>
+      <span class="result-value">${d.duration || requestBody.duration}s</span>
+    </div>
+    ${requestBody.style ? `
+    <div class="result-row">
+      <span class="result-label">Style</span>
+      <span class="result-value">${esc(requestBody.style)}</span>
+    </div>` : ''}
+    ${requestBody.tempo ? `
+    <div class="result-row">
+      <span class="result-label">Tempo</span>
+      <span class="result-value">${requestBody.tempo} BPM</span>
+    </div>` : ''}
+    ${requestBody.key ? `
+    <div class="result-row">
+      <span class="result-label">Key</span>
+      <span class="result-value">${esc(requestBody.key)}</span>
+    </div>` : ''}
+    ${hasAudio
+      ? `<audio class="audio-player" controls src="${escAttr(d.audio_url)}"></audio>`
+      : '<div class="placeholder-badge">&#x2139;&#xFE0F; Demo placeholder — composition model not yet integrated</div>'
+    }
+  `;
+
+  composeResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Composition UI helpers ──
+function setComposeLoading(on) {
+  composeLoading.style.display = on ? 'flex' : 'none';
+  composeBtn.disabled = on;
+  if (on) {
+    hideComposeError();
+    composeResults.style.display = 'none';
+  }
+}
+
+function showComposeError(msg) {
+  composeError.textContent = msg || 'Something went wrong.';
+  composeError.style.display = 'block';
+  composeResults.style.display = 'none';
+}
+
+function hideComposeError() { composeError.style.display = 'none'; }
+
+// ═══════════════════════════════════════════════════════════════════
+// Shared utilities
+// ═══════════════════════════════════════════════════════════════════
 
 function showToast(msg) {
   toast.textContent = msg;
@@ -446,6 +972,12 @@ function esc(s) {
 
 function escAttr(s) {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 </script>
 </body>
