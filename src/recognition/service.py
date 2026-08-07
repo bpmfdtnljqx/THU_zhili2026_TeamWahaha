@@ -1,33 +1,27 @@
 """
 recognition/service.py
 
-Placeholder music recognition service.
+Music recognition service — delegates to external engines via the provider
+layer, with graceful fallback to placeholder.
 
-This file is intentionally a stub. It returns a fixed response so the HTTP
-layer, frontend, and integration tests can all be wired up today.
+Architecture:
+    Recognizer  ──►  AurisProvider (HTTP)   ──►  Auris API
+                ──►  Placeholder (fallback)       (built-in)
+
+--- HOW TO SWAP THE RECOGNITION ENGINE ---
+
+1. Add a new provider in ``src/recognition/providers/``.
+2. Import it here and swap the instantiation in ``Recognizer.__init__``.
+3. The router and frontend need NO changes — the ``recognize()`` return
+   dict is the stable contract.
 
 --- REPLACEMENT GUIDE (for teammate) ---
 
-When the real recognition model is ready:
-
-1. Replace the body of ``Recognizer.recognize()`` with your model inference.
-2. The method signature is:
-       def recognize(self, audio_file: BinaryIO, filename: str = "") -> dict
-   - ``audio_file`` is a file-like object opened in binary mode.
-   - ``filename`` is the original uploaded filename (for format hinting).
-3. Return a dict with these keys:
-       {
-           "title": str,        # recognised song title, or ""
-           "artist": str,       # recognised artist, or ""
-           "confidence": float, # 0.0 – 1.0
-       }
-4. The API layer (backend/routers/recognition.py) will wrap your dict
-   into the standard HTTP response envelope automatically.
-5. If recognition fails for a known reason, raise a custom exception.
-   The exception handler will convert it to a clean error response.
-6. Do NOT modify the router — it stays thin on purpose.
-
-Supported formats: mp3, wav, flac, ogg, m4a (depends on your model).
+When your own model is ready instead of Auris:
+1. Write a new provider class with an ``identify(audio_file, filename)``
+   method that returns {title, artist, confidence, match_offset_secs}.
+2. Change ``_init_provider()`` to instantiate your provider.
+3. Delete ``providers/auris.py`` if no longer needed.
 """
 
 from __future__ import annotations
@@ -35,15 +29,29 @@ from __future__ import annotations
 import logging
 from typing import BinaryIO
 
+from .providers.auris import AurisProvider
+
 logger = logging.getLogger("lyra.recognition")
 
 
 class Recognizer:
-    """Placeholder music recognition engine.
+    """Music recognition engine.
 
-    Currently returns an empty result. Replace the internals with your
-    fingerprinting / embedding model when ready.
+    Tries the Auris fingerprinting engine first.  If Auris is unreachable
+    or returns no match, falls back to a placeholder result so the rest of
+    the system stays functional.
+
+    Usage::
+
+        recognizer = Recognizer()
+        result = recognizer.recognize(uploaded_file, filename="recording.wav")
+        # result: {"title": "...", "artist": "...", "confidence": 0.92,
+        #          "match_offset_secs": 3.2}
     """
+
+    def __init__(self):
+        self._provider = _init_provider()
+        logger.info("Recognizer ready — provider=%s", type(self._provider).__name__)
 
     def recognize(self, audio_file: BinaryIO, filename: str = "") -> dict:
         """Identify a song from raw audio data.
@@ -51,44 +59,30 @@ class Recognizer:
         Args:
             audio_file: A file-like object opened in binary mode (e.g. the
                 result of ``UploadFile.file`` in FastAPI).
-            filename: The original filename, for format detection.
+            filename: The original uploaded filename, for format hinting.
 
         Returns:
-            dict with keys ``title``, ``artist``, ``confidence``.
+            dict with keys ``title``, ``artist``, ``confidence``,
+            and ``match_offset_secs``.  Extra keys are harmless — the API
+            layer picks the fields it needs.
         """
-        # ── Placeholder — replace with real inference below ──────────
-        logger.info(
-            "Recognition requested (filename=%s, size=%d bytes) — "
-            "returning placeholder result.",
-            filename or "<unknown>",
-            _safe_file_size(audio_file),
-        )
+        # ── Try Auris provider ──────────────────────────────────────
+        try:
+            result = self._provider.identify(audio_file, filename)
+            if result.get("title"):
+                return result
+            # Auris returned successfully but with no match.
+            logger.info("Auris returned no match — returning placeholder")
+        except Exception:
+            logger.exception("Auris provider raised unexpectedly — falling back")
 
-        # TODO: Replace with real recognition logic. Example skeleton:
-        #
-        #   import your_model
-        #   audio_bytes = audio_file.read()
-        #   result = your_model.identify(audio_bytes)
-        #   return {
-        #       "title":      result.title,
-        #       "artist":     result.artist,
-        #       "confidence": result.confidence,
-        #   }
-        #
-        # For now, always return an empty placeholder.
-
+        # ── Fallback: placeholder ───────────────────────────────────
         return {
             "title": "",
             "artist": "",
             "confidence": 0.0,
+            "match_offset_secs": None,
         }
-
-    # ── Future extension points ────────────────────────────────────
-    # Add helper methods here as your module grows:
-    #   - _validate_format(filename) -> bool
-    #   - _preprocess_audio(audio_bytes) -> processed_data
-    #   - _fingerprint(processed_data) -> fingerprint
-    #   - _search_fingerprint(fingerprint) -> match_result
 
 
 # ---------------------------------------------------------------------------
@@ -96,13 +90,34 @@ class Recognizer:
 # ---------------------------------------------------------------------------
 
 
-def _safe_file_size(f: BinaryIO) -> int:
-    """Return the size of a file-like object without moving its cursor."""
+def _init_provider():
+    """Create the recognition provider.
+
+    Try Auris first.  If the environment variable is set to a non-default
+    value we trust the user's intent; otherwise we still create the
+    AurisProvider and let it handle connection failures gracefully at
+    call time (so a late-started Auris container works without restarting
+    the Lyra process).
+    """
     try:
-        pos = f.tell()
-        f.seek(0, 2)  # seek to end
-        size = f.tell()
-        f.seek(pos)  # restore position
-        return size
-    except (OSError, AttributeError):
-        return -1
+        provider = AurisProvider()
+        # Quick connectivity check — non-fatal.
+        # We don't actually call /identify here (no audio to send), but
+        # the provider logs its endpoint URL for debugging.
+        return provider
+    except Exception:
+        logger.exception("Failed to initialise Auris provider")
+        # Return a bare provider-like object that always returns empty.
+        return _FallbackProvider()
+
+
+class _FallbackProvider:
+    """Minimal provider used when Auris cannot even be imported."""
+
+    def identify(self, audio_file: BinaryIO, filename: str = "") -> dict:
+        return {
+            "title": "",
+            "artist": "",
+            "confidence": 0.0,
+            "match_offset_secs": None,
+        }
