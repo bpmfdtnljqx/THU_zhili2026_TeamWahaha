@@ -1,9 +1,9 @@
 # 🎵 Lyra — 项目记录 (Project Record)
 
-> 更新日期：2026-08-02
+> 更新日期：2026-08-07
 > 项目：AI 驱动的音乐推荐智能体
 >
-> **推荐后端已功能完备。** 待开发：前端界面、听歌识曲、AI 作曲。
+> **推荐后端已功能完备，FastAPI 服务 + 前端 Demo 已上线。** 待开发：听歌识曲、AI 作曲。
 
 ---
 
@@ -18,7 +18,9 @@
 - **反馈系统**：JSONL 持久化用户反馈，为未来个性化做准备
 - **可观测性**：结构化日志 + 增强基准测试（含多样性指标、LLM 评委）
 - **API 层**：`recommend()` 返回结构化数据，前端集成即用
-- **开发阶段**：推荐后端已功能完备，前端尚未开始
+- **后端服务**：FastAPI 薄封装层（`backend/`），提供 REST API
+- **前端 Demo**：轻量级单页应用（`frontend/index.html`），完整的推荐→展示→反馈交互
+- **开发阶段**：从"构建推荐引擎"转向"整合 AI 音乐助手平台"，团队协作与演示准备中
 
 ---
 
@@ -34,7 +36,13 @@
 | `4e901da` | 接入 DeepSeek API 重排序模块，大幅缩短响应时间 |
 | `8cb72ec` | 修复 API 调用问题，优化运行界面 |
 | `f7ccf1c` | **Phase 2.1**：实现 Agent 层 — Planner（意图理解）+ Agent（编排）+ Response（自然对话） |
-| *(未提交)* | **Phase 2.2**：推荐后端升级 — LLM 自然对话、用户反馈存储、avoid 过滤、结构化日志、`recommend()` API、增强基准测试 |
+| `39a9168` | **lyra v1.0**：统一调用与反馈接口 |
+| `7ade89a` | 统一调用、反馈等各种接口 |
+| `8ed0747` | 优化架构 |
+| `98619ed` | **部署 FastAPI**：后端服务上线 |
+| `d86998e` | 美化网页 — 前端 Demo 上线 |
+| `ede1849` | 提高运行稳定性 |
+| `224abf8` | 更新数据库 + 跨设备使用优化 |
 
 ---
 
@@ -50,6 +58,8 @@ lyra/
 ├── PROJECT_RECORD.md        # 本文件 — 项目记录
 ├── requirements.txt         # Python 依赖
 ├── songs.json              # 音乐知识库（170首歌曲，源数据）
+├── start_backend.bat        # 后端一键启动脚本
+├── start_frontend.bat       # 前端一键启动脚本
 ├── diagnose_api.py          # DeepSeek API 独立诊断工具
 ├── test_reranker_parse.py   # 重排序器 JSON 解析单元测试
 ├── test_planner_parse.py    # Planner JSON 解析单元测试
@@ -67,6 +77,23 @@ lyra/
 │   ├── logger.py            # 结构化日志模块（时间戳、模块名、计时器）
 │   ├── api.py               # 薄封装 API，供前端集成使用
 │   └── benchmark.py         # 性能基准测试 + 多样性指标 + LLM 评委 + 管道计时
+├── backend/                  # 🆕 FastAPI 后端服务
+│   ├── app.py                #   FastAPI 应用工厂 + CORS 中间件
+│   ├── models.py             #   Pydantic 请求/响应模型
+│   ├── exception_handlers.py #   统一异常处理
+│   ├── smoke_test.py         #   端到端 Smoke 测试（含完整推荐管道）
+│   ├── requirements.txt      #   后端额外依赖（fastapi, uvicorn）
+│   └── routers/              #   API 路由模块
+│       ├── recommend.py      #     POST /recommend
+│       ├── feedback.py       #     POST /feedback
+│       ├── recognition.py    #     POST /recognition（placeholder）
+│       └── composition.py    #     POST /composition（placeholder）
+├── frontend/                 # 🆕 前端 Demo
+│   └── index.html            #   轻量级单页应用（输入→推荐→展示→反馈）
+├── docs/                     # 🆕 文档
+│   ├── ARCHITECTURE.md       #   系统架构文档
+│   ├── API_SPEC.md           #   API 规范
+│   └── FRONTEND_INTEGRATION.md # 前端集成指南
 └── chroma_db/               # ChromaDB 持久化向量数据库（自动生成）
     ├── chroma.sqlite3
     └── 2198d989-.../        # 向量索引数据文件
@@ -94,15 +121,18 @@ lyra/
 - 🎧 语义音乐推荐
 - 🎶 AI 作曲
 
-提及项目正在参加"智理杯"大赛，使用 MIT 协议。
+包含快速开始指南、后端启动命令（`uvicorn backend.app:app --reload`）、前端使用说明。提及项目正在参加"智理杯"大赛，使用 MIT 协议。
 
 #### `CLAUDE.md`
-面向 AI 助手的开发原则：
+面向 AI 助手的开发原则（已更新至 2026-08-07）：
 1. **语义检索优先** — 不使用关键词匹配
 2. **Agent 优先** — 业务逻辑独立于前端
 3. **songs.json 是唯一数据源** — 不可自动覆写
 4. **简洁架构** — 避免过度工程化
-5. **当前里程碑** — 专注后端检索引擎，不碰前端
+5. **稳定架构** — 管道不可随意重新设计
+6. **当前里程碑** — 平台整合阶段：团队协作、演示准备、稳定性
+
+记录了后端服务、前端 Demo、可靠性改进的完成状态。当前阶段：「整合 AI 音乐助手平台」。
 
 #### `SETUP_Guide.md`
 配置问题指南：
@@ -296,6 +326,75 @@ CLI 交互入口。
 - **🆕 管道计时** (`--timing`)：展示 Planner / Retriever / Reranker / Response 各阶段平均耗时
 - **CLI 参数**：`--runs N`、`--no-cache`、`--quality`、`--diversity`、`--judge`、`--timing`、`--full`、`--queries ...`
 
+### `backend/` 目录（🆕 FastAPI 后端服务）
+
+**薄 HTTP 层 — 将 src/ 的推荐逻辑封装为 REST API。**
+
+#### `backend/app.py`
+FastAPI 应用工厂。
+- `create_app()`：构建和配置 FastAPI 实例
+- 自动 CORS 中间件（`LYRA_CORS_ORIGINS` 可配置）
+- 自动注册路由：recommend、feedback、recognition、composition
+- OpenAPI 文档：`/docs`（Swagger UI）+ `/redoc`
+
+#### `backend/models.py`
+Pydantic 请求/响应模型。
+- `RecommendRequest` / `RecommendResponse`
+- `FeedbackRequest` / `FeedbackResponse`
+- `HealthResponse`：包含模块可用性状态（`modules.recommendation` / `recognition` / `composition`）
+
+#### `backend/exception_handlers.py`
+统一异常处理。
+- 捕获管道各阶段异常，返回标准化的错误 JSON
+- 区分内部错误（500）与输入错误（400/422）
+
+#### `backend/smoke_test.py`
+端到端 Smoke 测试。
+- 启动 uvicorn 测试客户端 → 调用 `/health` → 调用 `/recommend` → 验证完整管道执行
+- 不依赖外部网络（使用真实 DeepSeek API）
+
+#### `backend/routers/recommend.py`
+`POST /recommend` — 接收用户消息，返回 AI 推荐回复。
+
+#### `backend/routers/feedback.py`
+`POST /feedback` — 接收用户反馈（like/dislike），追加写入 `feedback.jsonl`。
+
+#### `backend/routers/recognition.py`
+`POST /recognition` — 占位端点，返回 `"not_implemented"`。
+
+#### `backend/routers/composition.py`
+`POST /composition` — 占位端点，返回 `"not_implemented"`。
+
+### `frontend/` 目录（🆕 前端 Demo）
+
+#### `frontend/index.html`
+轻量级单页应用（零框架，纯 HTML/CSS/JS）。
+- 用户输入框 → 发送 `/recommend` 请求 → 展示 AI 回复 + 歌曲卡片
+- 歌曲卡片展示：歌名、歌手、推荐理由
+- 反馈按钮：👍 喜欢 / 👎 不喜欢
+- 后端健康状态指示器（绿色/红色圆点）
+- 请求超时 + 重复请求防护
+- 暗色主题，渐变品牌色（violet → pink）
+- 可配置后端 URL：`LYRA_BACKEND_URL`（默认 `http://127.0.0.1:8000`）
+
+### `docs/` 目录（🆕 文档）
+
+#### `docs/ARCHITECTURE.md`
+系统架构文档。
+- 高层架构图：LyraAgent → Planner → Recommendation / Recognition / Composition
+- 各组件详细说明、数据流、API 契约
+- 版本：1.0，日期：2026-08-02
+
+#### `docs/API_SPEC.md`
+REST API 规范文档。
+- 所有端点的请求/响应格式
+- 错误码说明
+
+#### `docs/FRONTEND_INTEGRATION.md`
+前端集成指南。
+- 后端启动命令、端点列表、请求/响应示例
+- CORS 配置、健康检查用法
+
 ### `chroma_db/` 目录
 
 ChromaDB 持久化向量数据库（由 `build_index.py` 生成，已加入 `.gitignore`），包含：
@@ -316,6 +415,7 @@ ChromaDB 持久化向量数据库（由 `build_index.py` 生成，已加入 `.gi
 | 缓存 | 内存 LRU + TTL | 减少 API 调用，提速 |
 | 反馈存储 | JSONL 追加写入 | 零依赖，为个性化做准备 |
 | 日志 | 自定义 Logger | 结构化输出到 stderr，含计时器 |
+| 后端框架 | FastAPI + Uvicorn | 薄 HTTP 层，REST API |
 | 深度学习 | PyTorch + sentence-transformers | 模型推理 |
 | 语言 | Python 3.11 | 全项目统一 |
 
@@ -327,6 +427,9 @@ ChromaDB 持久化向量数据库（由 `build_index.py` 生成，已加入 `.gi
 
 ```
 用户查询（自然语言）
+    │
+    ▼
+[FastAPI] POST /recommend
     │
     ▼
 LyraAgent.recommend()
@@ -354,7 +457,7 @@ LLMResponse.generate()     ← DeepSeek API（自然对话）
     │  {intent, candidates, ranked_results, response_text, metadata}
     │  chat() 仅返回 response_text（向后兼容）
     ▼
-终端展示 + 反馈收集
+[FastAPI] JSON Response → 前端展示 + 反馈交互
 ```
 
 ### Phase 2.1 — 模板化回复（已被 Phase 2.2 替代）
@@ -374,7 +477,7 @@ LLMResponse.generate()     ← DeepSeek API（自然对话）
 ## 七、已完成 vs 待完成
 
 ### ✅ 已完成
-- 音乐知识库（170 首中文歌曲，结构化元数据）
+- 音乐知识库（170 首中文歌曲，结构化元数据；已更新最新数据）
 - BGE-M3 语义嵌入 + ChromaDB 向量索引
 - 检索引擎（Retriever）
 - DeepSeek API 重排序 + 个性化推荐理由（Reranker）
@@ -393,13 +496,17 @@ LLMResponse.generate()     ← DeepSeek API（自然对话）
 - 🆕 结构化日志模块（Logger）— 统一管道可观测性
 - 🆕 薄封装 API（api.py）— `recommend()` 返回结构化数据，前端即用
 - LYRA_DEBUG 管道可观测性模式
+- 🆕 FastAPI 后端服务（`backend/`）— REST API，薄 HTTP 层
+- 🆕 前端 Demo（`frontend/index.html`）— 完整的推荐→展示→反馈交互
+- 🆕 启动脚本（`start_backend.bat`、`start_frontend.bat`）
+- 🆕 项目文档（`docs/ARCHITECTURE.md`、`docs/API_SPEC.md`、`docs/FRONTEND_INTEGRATION.md`）
+- 🆕 稳定性增强：请求超时、重复请求防护、Reranker 认证失败降级
 
 ### 🚧 待完成
-- 前端界面 / 聊天 UI
 - 听歌识曲功能（独立模块）
 - AI 作曲功能（独立模块）
 - 基于反馈数据的个性化推荐
-- Phase 2.3：反馈驱动的推荐策略优化
+- 团队模块（Recognition / Composition）整合
 
 ---
 
@@ -408,33 +515,51 @@ LLMResponse.generate()     ← DeepSeek API（自然对话）
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
+pip install -r backend/requirements.txt   # FastAPI + Uvicorn
 
 # 2. 配置 .env（API key 等）
 # HF_ENDPOINT=https://hf-mirror.com
 # DEEPSEEK_API_KEY=sk-xxxxx
 
-# 3. 首次运行（自动构建索引）
-python src/main.py
+# 3. 构建索引（首次或 songs.json 更新后）
+python src/build_index.py
 
-# 4. API 诊断（如遇连接问题）
+# 4. 一键启动后端（Windows）
+start_backend.bat
+
+# 或手动启动
+uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+
+# 5. 打开前端 Demo
+# 浏览器打开 frontend/index.html
+
+# ── 开发与测试 ──
+
+# API 诊断（如遇连接问题）
 python diagnose_api.py
 
-# 5. 解析器测试
+# 解析器测试
 python test_reranker_parse.py
 python test_planner_parse.py
 
-# 6. 性能基准测试
+# Smoke 测试（启动后端后运行）
+python backend/smoke_test.py
+
+# 性能基准测试
 python src/benchmark.py --runs 3 --quality
 
-# 7. 增强基准测试（多样性 + LLM 评委 + 管道计时）
+# 增强基准测试（多样性 + LLM 评委 + 管道计时）
 python src/benchmark.py --diversity
 python src/benchmark.py --judge
 python src/benchmark.py --timing
 python src/benchmark.py --full        # 运行全部
 
-# 8. 管道调试（查看 Agent 各阶段内部状态）
+# CLI 交互模式
+python src/main.py
+
+# 管道调试（查看 Agent 各阶段内部状态）
 LYRA_DEBUG=1 python src/main.py
 
-# 9. 反馈统计
+# 反馈统计
 python -c "from src.feedback import FeedbackStore; print(FeedbackStore().stats())"
 ```
