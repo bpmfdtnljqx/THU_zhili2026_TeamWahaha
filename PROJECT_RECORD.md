@@ -57,7 +57,7 @@ lyra/
 ├── SETUP_Guide.md           # 配置指南（环境变量、依赖安装）
 ├── PROJECT_RECORD.md        # 本文件 — 项目记录
 ├── requirements.txt         # Python 依赖
-├── songs.json              # 音乐知识库（170首歌曲，源数据）
+├── songs.json              # 音乐知识库（300余首歌曲，源数据）
 ├── start_backend.bat        # 后端一键启动脚本
 ├── start_frontend.bat       # 前端一键启动脚本
 ├── diagnose_api.py          # DeepSeek API 独立诊断工具
