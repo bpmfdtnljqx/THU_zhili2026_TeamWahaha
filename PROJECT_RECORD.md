@@ -1,9 +1,9 @@
 # 🎵 Lyra — 项目记录 (Project Record)
 
-> 更新日期：2026-08-07
+> 更新日期：2026-08-08
 > 项目：AI 驱动的音乐推荐智能体
 >
-> **推荐后端已功能完备，FastAPI 服务 + 前端 Demo 已上线。** 待开发：听歌识曲、AI 作曲。
+> **推荐后端已完成，识曲模块已集成 Auris 引擎，作曲模块等待模型接入。** 演示准备阶段。
 
 ---
 
@@ -43,6 +43,26 @@
 | `d86998e` | 美化网页 — 前端 Demo 上线 |
 | `ede1849` | 提高运行稳定性 |
 | `224abf8` | 更新数据库 + 跨设备使用优化 |
+| `3062807` | 为识曲、作曲两个功能设计 API 接口 |
+| `c295dfa` | 开始实现识曲功能 |
+| `771924d` | 接入开源识别音频模型（Auris 引擎集成）
+| `5144a5f` | 更新 PROJECT_RECORD 和 CLAUDE.md |
+
+### 架构演进
+
+```
+v1.0 — RAG pipeline (Phase 1)
+  用户查询 → Retriever (BGE-M3) → ChromaDB → Reranker (DeepSeek) → 终端
+
+v2.0 — Agent pipeline (Phase 2.1)
+  用户查询 → Planner → Retriever → Reranker → Response (模板) → 终端
+
+v2.1 — Agent + LLM (Phase 2.2, current)
+  用户查询 → Planner → Retriever → Reranker → LLMResponse (自然对话) → 终端
+
+v2.2 — Multi-module platform (Phase 3, current)
+  Frontend → FastAPI → Recommendation / Recognition / Composition
+```
 
 ---
 
@@ -57,7 +77,7 @@ lyra/
 ├── SETUP_Guide.md           # 配置指南（环境变量、依赖安装）
 ├── PROJECT_RECORD.md        # 本文件 — 项目记录
 ├── requirements.txt         # Python 依赖
-├── songs.json              # 音乐知识库（300余首歌曲，源数据）
+├── songs.json              # 音乐知识库（170+首歌曲，源数据）
 ├── start_backend.bat        # 后端一键启动脚本
 ├── start_frontend.bat       # 前端一键启动脚本
 ├── diagnose_api.py          # DeepSeek API 独立诊断工具
@@ -76,8 +96,17 @@ lyra/
 │   ├── feedback.py          # 用户反馈存储（JSONL 追加写入）
 │   ├── logger.py            # 结构化日志模块（时间戳、模块名、计时器）
 │   ├── api.py               # 薄封装 API，供前端集成使用
-│   └── benchmark.py         # 性能基准测试 + 多样性指标 + LLM 评委 + 管道计时
-├── backend/                  # 🆕 FastAPI 后端服务
+│   ├── benchmark.py         # 性能基准测试 + 多样性指标 + LLM 评委 + 管道计时
+│   ├── recognition/         # 🆕 听歌识曲模块
+│   │   ├── __init__.py
+│   │   ├── service.py       #   Recognizer — 统一识别接口（含优雅降级）
+│   │   └── providers/       #   识别引擎适配层
+│   │       ├── __init__.py
+│   │       └── auris.py     #   Auris HTTP 通信适配器
+│   └── composition/         # 🆕 AI 作曲模块（placeholder）
+│       ├── __init__.py
+│       └── service.py       #   Composer — 作曲接口（等待模型接入）
+├── backend/                  # FastAPI 后端服务
 │   ├── app.py                #   FastAPI 应用工厂 + CORS 中间件
 │   ├── models.py             #   Pydantic 请求/响应模型
 │   ├── exception_handlers.py #   统一异常处理
@@ -86,11 +115,15 @@ lyra/
 │   └── routers/              #   API 路由模块
 │       ├── recommend.py      #     POST /recommend
 │       ├── feedback.py       #     POST /feedback
-│       ├── recognition.py    #     POST /recognition（placeholder）
+│       ├── recognition.py    #     POST /recognition（已接入 Auris）
 │       └── composition.py    #     POST /composition（placeholder）
-├── frontend/                 # 🆕 前端 Demo
+├── frontend/                 # 前端 Demo
 │   └── index.html            #   轻量级单页应用（输入→推荐→展示→反馈）
-├── docs/                     # 🆕 文档
+├── auris-engine/             # 🆕 Auris 开源指纹识别引擎（独立 Docker 项目）
+│   ├── backend/              #   Rust 后端（Actix Web + SQLite）
+│   ├── frontend/             #   React 管理界面
+│   └── ...
+├── docs/                     # 文档
 │   ├── ARCHITECTURE.md       #   系统架构文档
 │   ├── API_SPEC.md           #   API 规范
 │   └── FRONTEND_INTEGRATION.md # 前端集成指南
@@ -360,12 +393,54 @@ Pydantic 请求/响应模型。
 `POST /feedback` — 接收用户反馈（like/dislike），追加写入 `feedback.jsonl`。
 
 #### `backend/routers/recognition.py`
-`POST /recognition` — 占位端点，返回 `"not_implemented"`。
+`POST /recognition` — 接收音频文件，通过 Auris 引擎识别歌曲。Auris 不可用时优雅降级。
 
 #### `backend/routers/composition.py`
-`POST /composition` — 占位端点，返回 `"not_implemented"`。
+`POST /composition` — 占位端点，等待队友模型接入。
 
-### `frontend/` 目录（🆕 前端 Demo）
+### `src/recognition/` 目录（🆕 识曲模块）
+
+#### `src/recognition/service.py`
+**音乐识曲引擎 — 统一识别接口。**
+
+- **`Recognizer`**：先尝试 Auris 指纹引擎，失败时返回空结果（优雅降级）
+  - `recognize(audio_file, filename) -> dict`：返回 `{title, artist, confidence, match_offset_secs}`
+- **`_init_provider()`**：工厂方法，按优先级创建识别引擎适配器
+- **`_FallbackProvider`**：兜底适配器，始终返回空结果
+
+#### `src/recognition/providers/auris.py`
+**Auris HTTP 通信适配器。**
+
+- `AurisProvider`：封装与 Auris 指纹识别引擎的 HTTP 通信
+  - 通过环境变量 `AURIS_API_URL` 配置引擎地址
+  - 上传音频文件进行指纹匹配，获取识别结果
+  - 连接失败自动抛出异常，由 `Recognizer` 优雅降级
+
+替换指南详见 `src/recognition/service.py` 文件顶部的注释。
+
+### `src/composition/` 目录（🆕 作曲模块 — placeholder）
+
+#### `src/composition/service.py`
+**AI 作曲引擎 — 等待模型接入。**
+
+- **`Composer`**：占位作曲引擎
+  - `generate(prompt, duration, style, tempo, key) -> dict`：接口已定义，返回 `{audio_url, duration}`
+- 详细的替换指南（方法签名、返回值、文件存储方案）写在文件顶部的注释中
+- 当前始终返回 `audio_url: None`
+
+### `auris-engine/` 目录（🆕 Auris 开源指纹识别引擎）
+
+独立 Docker 项目，提供音频指纹匹配服务。
+
+- **backend/**：Rust 后端（Actix Web + SQLite）
+  - 指纹提取与匹配算法
+  - REST API 端点：`/health`、`/identify`、`/tracks`
+  - 异步任务队列（指纹提取 worker）
+- **frontend/**：React 管理界面
+  - 音频文件上传与管理
+  - 识别结果可视化
+
+> **注意**：auris-engine 是外部项目，不参与 Lyra 的构建或部署。Lyra 通过 HTTP 与其通信。
 
 #### `frontend/index.html`
 轻量级单页应用（零框架，纯 HTML/CSS/JS）。
@@ -501,12 +576,20 @@ LLMResponse.generate()     ← DeepSeek API（自然对话）
 - 🆕 启动脚本（`start_backend.bat`、`start_frontend.bat`）
 - 🆕 项目文档（`docs/ARCHITECTURE.md`、`docs/API_SPEC.md`、`docs/FRONTEND_INTEGRATION.md`）
 - 🆕 稳定性增强：请求超时、重复请求防护、Reranker 认证失败降级
+- 🆕 听歌识曲 API 端点（`POST /recognition`）— Auris HTTP 引擎集成
+- 🆕 识曲服务层（`src/recognition/service.py`）— 引擎抽象 + 优雅降级
+- 🆕 Auris HTTP Provider（`src/recognition/providers/auris.py`）— Docker 引擎通信
+- 🆕 作曲 API 端点（`POST /composition`）— 接口预留，等待模型接入
 
-### 🚧 待完成
-- 听歌识曲功能（独立模块）
-- AI 作曲功能（独立模块）
+### 🚧 进行中
+- Auris 指纹数据库需要构建（音频文件 → 指纹 → 入库）
+- 团队作曲模型集成（等待队友交付）
+
+### ⏳ 待完成
 - 基于反馈数据的个性化推荐
-- 团队模块（Recognition / Composition）整合
+- 端到端识曲测试（依赖 Auris 指纹库就绪）
+- 团队模块（Recognition / Composition）端到端集成
+- 演示准备
 
 ---
 
@@ -563,3 +646,54 @@ LYRA_DEBUG=1 python src/main.py
 # 反馈统计
 python -c "from src.feedback import FeedbackStore; print(FeedbackStore().stats())"
 ```
+
+---
+
+## 九、当前架构（v2.2 — Multi-module platform）
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Frontend (Demo)                       │
+│              frontend/index.html                         │
+└──────────────────────┬──────────────────────────────────┘
+                       │  HTTP REST
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│                 FastAPI Backend                          │
+│              backend/app.py                              │
+│                                                         │
+│  ┌──────────────┬──────────────┬──────────────────┐     │
+│  │ /recommend   │ /recognition │ /composition     │     │
+│  │ (完整)       │ (Auris 集成) │ (placeholder)    │     │
+│  └──────┬───────┴──────┬───────┴────────┬─────────┘     │
+└─────────┼──────────────┼────────────────┼───────────────┘
+          │              │                │
+          ▼              ▼                ▼
+┌─────────────────┐ ┌──────────────┐ ┌──────────────┐
+│ Recommendation  │ │ Recognition  │ │ Composition  │
+│ (完成)          │ │ (已集成)     │ │ (等待模型)   │
+│                 │ │              │ │              │
+│ Planner         │ │ Recognizer   │ │ Composer     │
+│  → Retriever    │ │  → Auris     │ │  → stub      │
+│  → Reranker     │ │  → Fallback  │ │              │
+│  → LLMResponse  │ │              │ │              │
+└─────────────────┘ └──────┬───────┘ └──────────────┘
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │  Auris Engine   │
+                  │  (Docker)       │
+                  │                 │
+                  │  Rust backend   │
+                  │  + React UI     │
+                  └─────────────────┘
+```
+
+**关键工程原则：**
+
+1. **保持架构简单** — 避免不必要的抽象层
+2. **避免过度工程化** — 适度的简单胜过"完美"的复杂度
+3. **稳定接口优先** — API contract 一经定义就不要随意改动
+4. **比赛演示导向** — 功能稳定可用 > 架构优雅美观
+5. **增量集成** — 优先让现有模块正确工作，再扩展新功能
+6. **不重新设计已完成模块** — Recommendation pipeline 已经稳定，不要重新设计

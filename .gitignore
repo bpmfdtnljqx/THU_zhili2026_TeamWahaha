@@ -33,3 +33,11 @@ Desktop.ini
 
 # ── Claude Code (session-local, not shared) ──
 .claude/settings.local.json
+
+# ── Log files ──
+*.log
+
+# ── Build artifacts ──
+build/
+*.bak
+.python-version
