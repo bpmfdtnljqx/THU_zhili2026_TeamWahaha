@@ -6,10 +6,7 @@ natural-language text to return Top-K song recommendations.
 """
 
 import os
-# === Force offline mode to avoid network checks ===
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_ENDPOINT"] = ""
+
 
 from sentence_transformers import SentenceTransformer
 import chromadb

@@ -1,6 +1,6 @@
 # Lyra 环境搭建指南
 
-> 给by饱饱和jy饱饱，让他们快速配置现在已经使用的环境。
+> 给by饱饱，让他快速配置现在已经使用的环境。
 
 ---
 # 先把最重要的放在最前边吧，deepseek专家模式不如gpt一般模式写prompt写的好，建议跟gpt提供你想干什么让他给你写prompt给Claude
@@ -223,7 +223,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```bash
 # 在项目根目录创建 .env，填入你的 DeepSeek API Key
-echo DEEPSEEK_API_KEY=sk-你的密钥 > .env
+echo DEEPSEEK_API_KEY=sk-fb76b853176d4d0390d6b18ee083cc23 > .env
 echo DEEPSEEK_BASE_URL=https://api.deepseek.com >> .env
 echo DEEPSEEK_MODEL=deepseek-chat >> .env
 ```
@@ -231,19 +231,66 @@ echo DEEPSEEK_MODEL=deepseek-chat >> .env
 > `.env` 已在 `.gitignore` 中，不会被提交。
 
 ### 5.5 构建 ChromaDB 索引
+#新电脑第一次运行 Lyra 时，chroma_db/ 通常不存在，或者里面没有歌曲 Collection。
+
+即使已经看到：
+
+chroma_db/chroma.sqlite3
+
+也不代表数据库里已经有歌曲。
+
+必须确认 lyra_songs Collection 已经建立。
 
 ```bash
 python src/build_index.py
 ```
 
 这一步会：
-1. 读取 `songs.json`（170+ 首歌曲）
-2. 下载 BGE-M3 嵌入模型（~2 GB，仅首次）
-3. 生成每条歌曲的语义向量
-4. 写入 `chroma_db/` 目录
+songs.json 
+↓ 
+读取歌曲 
+↓ 
+加载 BAAI/bge-m3 
+↓ 
+为歌曲生成 embedding 
+↓ 
+创建 lyra_songs 
+↓ 
+保存到 chroma_db/
 
-> 输出示例：`Done. 170 songs indexed in 'lyra_songs'.`
 
+> 输出示例：
+Loaded 395 songs.
+Loading embedding model BAAI/bge-m3...
+Embedding 395 songs...
+Batches: 100% ...
+Persisting to ...\chroma_db...
+Done. 395 songs indexed in 'lyra_songs'.
+
+最重要的是最后一行：
+
+Done. xxx songs indexed in 'lyra_songs'.
+
+出现这个结果才说明索引真正建立成功。
+
+
+#建议首次构建完成后执行：
+
+python -c "import chromadb; c=chromadb.PersistentClient(path=r'D:\ZhiliProjects\lyra\chroma_db'); print(c.list_collections())"
+
+应该看到：
+
+[Collection(name=lyra_songs)]
+
+再检查歌曲数量：
+
+python -c "import chromadb; c=chromadb.PersistentClient(path=r'D:\ZhiliProjects\lyra\chroma_db'); x=c.get_collection('lyra_songs'); print('songs:', x.count())"
+
+应该得到类似：
+
+songs: 395
+
+具体数量以当前 songs.json 为准。
 > `chroma_db/` 已在 `.gitignore` 中，每位开发者需自行构建。
 
 ### 5.6 启动后端
@@ -306,6 +353,116 @@ python diagnose_api.py
 ```
 
 ---
+### 5.9  如果 /recommend 返回 400，按这个顺序排查
+
+不要第一时间修改前端。
+
+情况 A：出现 Hugging Face / model 错误
+
+检查：
+
+BAAI/bge-m3
+
+是否已经下载完整。
+
+如果是第一次运行，确认可以访问 Hugging Face 或配置有效镜像。
+
+情况 B：出现：
+Collection 'lyra_songs' does not exist
+
+执行：
+
+python src\build_index.py
+
+然后确认：
+
+Done. xxx songs indexed in 'lyra_songs'.
+情况 C：list_collections() 返回：
+[]
+
+说明 ChromaDB 数据库存在，但没有 Collection。
+
+不要只创建一个空的 lyra_songs。
+
+应该重新运行：
+
+python src\build_index.py
+
+因为真正需要的是：
+
+lyra_songs
+├── song 1 embedding
+├── song 2 embedding
+├── ...
+└── song N embedding
+情况 D：BGE-M3 下载成功，但是仍然 400
+
+检查后端日志里是否出现：
+
+Collection 'lyra_songs' loaded (xxx songs).
+
+如果没有，优先检查：
+
+src/retriever.py
+
+中的 PERSIST_DIR 和：
+
+COLLECTION_NAME = "lyra_songs"
+
+是否正确。
+
+情况 E：出现 DeepSeek API 错误
+
+检查 .env：
+
+DEEPSEEK_API_KEY=...
+DEEPSEEK_BASE_URL=...
+DEEPSEEK_MODEL=deepseek-chat
+
+然后重新启动 backend。
+
+.env 修改以后，已经运行的 Uvicorn 进程不会自动获得新的环境变量，建议重新启动后端。
+
+### 5.10 新电脑Recommendation功能完整安装顺序（一眼版）
+
+如果只是想快速照着做，不想看前面的解释，按照下面执行：
+
+:: 1. 创建环境
+conda create -n lyra-env python=3.11
+
+:: 2. 激活
+conda activate lyra-env
+
+:: 3. 进入项目
+D:
+cd D:\ZhiliProjects\lyra
+
+:: 4. 安装依赖
+pip install -r requirements.txt
+
+:: 5. 配置 .env
+:: 填入 DEEPSEEK_API_KEY
+
+:: 6. 第一次必须构建向量数据库
+python src\build_index.py
+
+:: 7. 启动后端
+start_backend.bat
+
+然后：
+
+浏览器
+    ↓
+打开 frontend/index.html
+    ↓
+Backend connected
+    ↓
+输入“来点悲伤的”
+    ↓
+Recommend
+    ↓
+检查后端是否出现：
+POST /recommend ... 200 OK
 
 ## 6. Docker 启动（Auris 识曲引擎）
 
