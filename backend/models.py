@@ -1,11 +1,8 @@
 """
 Pydantic models for Lyra API request/response validation.
-
-Keeps the FastAPI layer thin: these models define the HTTP contract
-while src/api.py owns all business logic and data shapes.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,13 +19,13 @@ class RecommendRequest(BaseModel):
         ...,
         min_length=1,
         max_length=2000,
-        description="Free-form natural language input describing mood, situation, or listening needs",
-        examples=["加班到凌晨，不想听太吵的歌"],
+        description="Free-form natural language input.",
+        examples=["I want relaxing music for late-night work."],
     )
 
 
 class SongRecommendation(BaseModel):
-    """A single song recommendation (mirrors Reranker output)."""
+    """A single song recommendation."""
 
     title: str
     artist: str
@@ -79,7 +76,7 @@ class MetadataInfo(BaseModel):
 
 
 class RecommendResponse(BaseModel):
-    """POST /recommend response (success)."""
+    """POST /recommend response."""
 
     success: bool = True
     module: str = "recommendation"
@@ -102,19 +99,22 @@ class FeedbackRequest(BaseModel):
     user_query: str = Field(
         ...,
         min_length=1,
-        description="The original user query this feedback refers to",
+        description="The original user query.",
     )
+
     song_titles: List[str] = Field(
         ...,
-        description="Song titles from the recommendation this feedback refers to",
+        description="Song titles from the recommendation.",
     )
+
     ratings: Dict[str, str] = Field(
         default_factory=dict,
-        description='Mapping of song title → "like" | "dislike" | "neutral"',
+        description='Mapping of song title to "like", "dislike", or "neutral".',
     )
+
     comment: Optional[str] = Field(
         None,
-        description="Optional free-text comment from the user",
+        description="Optional free-text comment.",
     )
 
 
@@ -136,30 +136,63 @@ class HealthResponse(BaseModel):
 
     status: str = "ok"
     version: str = "1.0.0"
+
     modules: Dict[str, str] = Field(
         default_factory=lambda: {
             "recommendation": "stable",
-            "recognition": "not_implemented",
+            "recognition": "stable",
             "composition": "not_implemented",
         }
     )
 
 
 # ---------------------------------------------------------------------------
-# Placeholder (future integration)
+# Recognition
 # ---------------------------------------------------------------------------
 
 
-# ── Recognition ─────────────────────────────────────────────────────────
-
-
 class RecognitionData(BaseModel):
-    """Recognition result payload."""
+    """
+    Recognition result returned by the cloud recognition provider.
 
-    title: str = Field("", description="Recognised song title, empty if unknown")
-    artist: str = Field("", description="Recognised artist, empty if unknown")
+    Empty strings or None are used when no match is found.
+    """
+
+    title: str = Field(
+        "",
+        description="Recognised song title.",
+    )
+
+    artist: str = Field(
+        "",
+        description="Recognised artist.",
+    )
+
+    album: str = Field(
+        "",
+        description="Recognised album.",
+    )
+
     confidence: float = Field(
-        0.0, ge=0.0, le=1.0, description="Confidence score 0.0–1.0"
+        0.0,
+        ge=0.0,
+        le=1.0,
+        description="Recognition confidence score from 0.0 to 1.0.",
+    )
+
+    match_offset_secs: Optional[float] = Field(
+        None,
+        description="Matched position in the uploaded audio, in seconds.",
+    )
+
+    release_date: Optional[str] = Field(
+        None,
+        description="Song release date if provided by the provider.",
+    )
+
+    song_link: Optional[str] = Field(
+        None,
+        description="External link to the recognised song.",
     )
 
 
@@ -168,11 +201,17 @@ class RecognitionResponse(BaseModel):
 
     success: bool = True
     module: str = "recognition"
-    data: RecognitionData = Field(default_factory=RecognitionData)
+
+    data: RecognitionData = Field(
+        default_factory=RecognitionData
+    )
+
     message: str = "Recognition completed"
 
 
-# ── Composition ─────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Composition
+# ---------------------------------------------------------------------------
 
 
 class CompositionRequest(BaseModel):
@@ -182,30 +221,34 @@ class CompositionRequest(BaseModel):
         ...,
         min_length=1,
         max_length=1000,
-        description="Natural-language description of desired music",
+        description="Natural-language description of desired music.",
         examples=["Create a relaxing piano melody"],
     )
+
     duration: int = Field(
-        30,
-        ge=1,
-        le=300,
-        description="Target duration in seconds (1–300)",
+        60,
+        ge=30,
+        le=240,
+        description="Target duration in seconds.",
     )
+
     style: Optional[str] = Field(
         None,
         max_length=200,
-        description="Optional musical style reference",
+        description="Optional musical style reference.",
     )
+
     tempo: Optional[int] = Field(
         None,
         ge=20,
         le=300,
-        description="Optional BPM hint",
+        description="Optional BPM hint.",
     )
+
     key: Optional[str] = Field(
         None,
         max_length=30,
-        description='Optional musical key hint (e.g. "C major")',
+        description='Optional musical key hint, e.g. "C major".',
     )
 
 
@@ -213,9 +256,14 @@ class CompositionData(BaseModel):
     """Composition result payload."""
 
     audio_url: Optional[str] = Field(
-        None, description="URL to generated audio file, null if not yet generated"
+        None,
+        description="URL to generated audio file.",
     )
-    duration: int = Field(0, description="Actual duration in seconds")
+
+    duration: int = Field(
+        0,
+        description="Actual duration in seconds.",
+    )
 
 
 class CompositionResponse(BaseModel):
@@ -223,7 +271,11 @@ class CompositionResponse(BaseModel):
 
     success: bool = True
     module: str = "composition"
-    data: CompositionData = Field(default_factory=CompositionData)
+
+    data: CompositionData = Field(
+        default_factory=CompositionData
+    )
+
     message: str = "Composition completed"
 
 

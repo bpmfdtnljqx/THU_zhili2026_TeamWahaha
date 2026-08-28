@@ -14,8 +14,8 @@
     --border:    #2a2a3a;
     --text:      #e4e4ec;
     --muted:     #8888a0;
-    --accent:    #a78bfa;   /* violet */
-    --accent2:   #f472b6;   /* pink   */
+    --accent:    #a78bfa;
+    --accent2:   #f472b6;
     --like:      #34d399;
     --dislike:   #f87171;
     --radius:    12px;
@@ -31,253 +31,580 @@
   }
 
   /* ── Layout ── */
-  .container { max-width: 720px; margin: 0 auto; padding: 32px var(--gap) 80px; }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px var(--gap) 80px;
+  }
 
   /* ── Header ── */
   header {
-    text-align: center; padding: 48px 0 32px;
+    text-align: center;
+    padding: 48px 0 32px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  header h1 { font-size: 2rem; font-weight: 700; }
-  header p  { font-size: 0.95rem; color: var(--muted); margin-top: 4px; }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  header p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
 
   /* ── Tabs ── */
   .tabs {
-    display: flex; gap: 4px; margin-bottom: 0;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 4px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
   }
+
   .tab-btn {
-    flex: 1; padding: 10px 12px; font-size: 0.9rem; font-weight: 500;
-    border: none; background: transparent; color: var(--muted);
-    border-radius: calc(var(--radius) - 2px); cursor: pointer;
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: calc(var(--radius) - 2px);
+    cursor: pointer;
     transition: background 0.2s, color 0.2s;
     white-space: nowrap;
   }
-  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn:hover {
+    color: var(--text);
+  }
+
   .tab-btn.active {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; font-weight: 600;
+    color: #fff;
+    font-weight: 600;
   }
 
   /* ── Status bar ── */
   .status-bar {
-    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); margin: 12px 0 20px; font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 12px 0 20px;
+    font-size: 0.85rem;
   }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.ok { background: var(--like); }
-  .status-dot.err { background: var(--dislike); }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.ok {
+    background: var(--like);
+  }
+
+  .status-dot.err {
+    background: var(--dislike);
+  }
 
   /* ── Panels ── */
-  .panel { display: none; }
-  .panel.active { display: block; }
+  .panel {
+    display: none;
+  }
+
+  .panel.active {
+    display: block;
+  }
 
   /* ── Input row ── */
-  .input-row { display: flex; gap: 10px; margin-bottom: 28px; }
-  .input-row input {
-    flex: 1; padding: 12px 16px; font-size: 1rem;
-    background: var(--surface); color: var(--text);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    outline: none; transition: border-color 0.2s;
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
   }
-  .input-row input:focus { border-color: var(--accent); }
-  .input-row input::placeholder { color: var(--muted); }
+
+  .input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-row input:focus {
+    border-color: var(--accent);
+  }
+
+  .input-row input::placeholder {
+    color: var(--muted);
+  }
+
   .input-row button {
-    padding: 12px 28px; font-size: 1rem; font-weight: 600;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; border: none; border-radius: var(--radius);
-    cursor: pointer; white-space: nowrap;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
     transition: opacity 0.2s, transform 0.1s;
   }
-  .input-row button:hover { opacity: 0.9; }
-  .input-row button:active { transform: scale(0.97); }
-  .input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .input-row button:hover {
+    opacity: 0.9;
+  }
+
+  .input-row button:active {
+    transform: scale(0.97);
+  }
+
+  .input-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
   /* ── File upload area ── */
   .file-upload-area {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-    padding: 36px 24px; margin-bottom: 20px;
-    border: 2px dashed var(--border); border-radius: var(--radius);
-    background: var(--surface); cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 36px 24px;
+    margin-bottom: 20px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
   }
-  .file-upload-area:hover { border-color: var(--accent); background: rgba(167,139,250,.04); }
-  .file-upload-area.has-file { border-style: solid; border-color: var(--like); }
-  .file-upload-area .upload-icon { font-size: 2.2rem; }
-  .file-upload-area .upload-hint { font-size: 0.9rem; color: var(--muted); text-align: center; }
-  .file-upload-area .upload-filename { font-size: 0.95rem; color: var(--text); font-weight: 500; }
-  .file-upload-area input[type="file"] { display: none; }
+
+  .file-upload-area:hover {
+    border-color: var(--accent);
+    background: rgba(167,139,250,.04);
+  }
+
+  .file-upload-area.has-file {
+    border-style: solid;
+    border-color: var(--like);
+  }
+
+  .file-upload-area .upload-icon {
+    font-size: 2.2rem;
+  }
+
+  .file-upload-area .upload-hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .file-upload-area .upload-filename {
+    font-size: 0.95rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .file-upload-area input[type="file"] {
+    display: none;
+  }
 
   /* ── Composition form ── */
   .comp-form {
-    display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
   }
+
   .comp-form label {
-    font-size: 0.85rem; font-weight: 500; color: var(--muted);
-    display: flex; flex-direction: column; gap: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
-  .comp-form label span.optional { font-weight: 400; font-size: 0.78rem; }
+
+  .comp-form label span.optional {
+    font-weight: 400;
+    font-size: 0.78rem;
+  }
+
   .comp-form textarea,
   .comp-form input[type="text"],
   .comp-form input[type="number"] {
-    padding: 12px 14px; font-size: 0.95rem; font-family: inherit;
-    background: var(--surface); color: var(--text);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    outline: none; transition: border-color 0.2s; resize: vertical;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
   }
+
   .comp-form textarea:focus,
-  .comp-form input:focus { border-color: var(--accent); }
-  .comp-form textarea::placeholder { color: var(--muted); }
-  .comp-form textarea { min-height: 80px; }
+  .comp-form input:focus {
+    border-color: var(--accent);
+  }
+
+  .comp-form textarea::placeholder {
+    color: var(--muted);
+  }
+
+  .comp-form textarea {
+    min-height: 80px;
+  }
+
   .comp-form .form-row {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
+
   .comp-form .submit-row {
-    display: flex; justify-content: flex-end;
+    display: flex;
+    justify-content: flex-end;
   }
+
   .comp-form .submit-row button {
-    padding: 12px 32px; font-size: 1rem; font-weight: 600;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 600;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; border: none; border-radius: var(--radius);
-    cursor: pointer; white-space: nowrap;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
     transition: opacity 0.2s, transform 0.1s;
   }
-  .comp-form .submit-row button:hover { opacity: 0.9; }
-  .comp-form .submit-row button:active { transform: scale(0.97); }
-  .comp-form .submit-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .comp-form .submit-row button:hover {
+    opacity: 0.9;
+  }
+
+  .comp-form .submit-row button:active {
+    transform: scale(0.97);
+  }
+
+  .comp-form .submit-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
   /* ── States ── */
-  .state { display: none; }
-
-  /* Loading */
-  .loading {
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-    padding: 48px 0; color: var(--muted);
+  .state {
+    display: none;
   }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 48px 0;
+    color: var(--muted);
+  }
+
   .spinner {
-    width: 36px; height: 36px; border: 3px solid var(--border);
-    border-top-color: var(--accent); border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Error */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .error-banner {
-    padding: 14px 18px; background: rgba(248,113,113,.12);
+    padding: 14px 18px;
+    background: rgba(248,113,113,.12);
     border: 1px solid rgba(248,113,113,.3);
-    border-radius: var(--radius); color: var(--dislike);
-    font-size: 0.9rem; margin-bottom: 20px;
+    border-radius: var(--radius);
+    color: var(--dislike);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
   }
 
-  /* Empty */
   .empty-state {
-    text-align: center; padding: 48px 0; color: var(--muted);
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
   }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-  .empty-state p { font-size: 0.95rem; }
+
+  .empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  .empty-state p {
+    font-size: 0.95rem;
+  }
 
   /* ── Results ── */
-  .results { display: none; }
+  .results {
+    display: none;
+  }
 
   .ai-response {
-    padding: 20px 22px; background: var(--surface);
+    padding: 20px 22px;
+    background: var(--surface);
     border-left: 3px solid var(--accent);
     border-radius: 0 var(--radius) var(--radius) 0;
-    margin-bottom: 24px; font-size: 0.95rem; line-height: 1.8;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+    line-height: 1.8;
   }
 
-  .song-list { display: flex; flex-direction: column; gap: 14px; }
+  .song-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
 
   .song-card {
-    display: flex; gap: 16px; padding: 18px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); transition: border-color 0.2s;
+    display: flex;
+    gap: 16px;
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s;
   }
-  .song-card:hover { border-color: var(--accent); }
+
+  .song-card:hover {
+    border-color: var(--accent);
+  }
 
   .song-rank {
-    flex-shrink: 0; width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; font-size: 0.85rem; font-weight: 700;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    font-weight: 700;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: #fff;
   }
 
-  .song-body { flex: 1; min-width: 0; }
-  .song-title  { font-size: 1.05rem; font-weight: 600; }
-  .song-artist { color: var(--accent); font-weight: 500; }
-  .song-meta   { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
-  .song-reason { margin-top: 8px; font-size: 0.9rem; line-height: 1.6; }
-  .song-reason::before { content: '💭 '; }
+  .song-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .song-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .song-artist {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .song-meta {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .song-reason {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .song-reason::before {
+    content: '💭 ';
+  }
 
   .song-actions {
-    display: flex; flex-direction: column; gap: 8px;
-    align-items: center; justify-content: center; flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
+
   .song-actions button {
-    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
-    background: transparent; cursor: pointer; font-size: 1.1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1rem;
     transition: background 0.15s, border-color 0.15s;
   }
-  .btn-like:hover    { background: rgba(52,211,153,.15); border-color: var(--like); }
-  .btn-dislike:hover { background: rgba(248,113,113,.15); border-color: var(--dislike); }
-  .btn-like.active    { background: rgba(52,211,153,.25); border-color: var(--like); }
-  .btn-dislike.active { background: rgba(248,113,113,.25); border-color: var(--dislike); }
 
-  /* ── Module result cards (Recognition / Composition) ── */
+  .btn-like:hover {
+    background: rgba(52,211,153,.15);
+    border-color: var(--like);
+  }
+
+  .btn-dislike:hover {
+    background: rgba(248,113,113,.15);
+    border-color: var(--dislike);
+  }
+
+  .btn-like.active {
+    background: rgba(52,211,153,.25);
+    border-color: var(--like);
+  }
+
+  .btn-dislike.active {
+    background: rgba(248,113,113,.25);
+    border-color: var(--dislike);
+  }
+
+  /* ── Module result cards ── */
   .module-result {
-    padding: 22px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
+
   .module-result .result-title {
-    font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
   }
+
   .module-result .result-row {
-    display: flex; justify-content: space-between; padding: 8px 0;
-    border-bottom: 1px solid var(--border); font-size: 0.92rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
   }
-  .module-result .result-row:last-child { border-bottom: none; }
-  .module-result .result-label { color: var(--muted); }
-  .module-result .result-value { font-weight: 500; }
+
+  .module-result .result-row:last-child {
+    border-bottom: none;
+  }
+
+  .module-result .result-label {
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .module-result .result-value {
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
+  }
 
   /* Placeholder badge */
   .placeholder-badge {
-    display: inline-block; padding: 3px 10px; margin-top: 10px;
-    font-size: 0.78rem; font-weight: 500;
-    background: rgba(167,139,250,.12); color: var(--accent);
+    display: inline-block;
+    padding: 3px 10px;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: rgba(167,139,250,.12);
+    color: var(--accent);
     border: 1px solid rgba(167,139,250,.25);
     border-radius: 20px;
   }
 
   /* Audio player */
   .audio-player {
-    width: 100%; margin-top: 10px;
+    width: 100%;
+    margin-top: 10px;
   }
 
   /* Feedback toast */
   .toast {
-    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-    padding: 10px 24px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 24px; font-size: 0.9rem; color: var(--text);
-    opacity: 0; transition: opacity 0.3s;
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    font-size: 0.9rem;
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.3s;
   }
-  .toast.show { opacity: 1; }
+
+  .toast.show {
+    opacity: 1;
+  }
 
   /* ── Responsive ── */
   @media (max-width: 520px) {
-    .tabs { flex-direction: column; gap: 2px; }
-    .input-row { flex-direction: column; }
-    .comp-form .form-row { grid-template-columns: 1fr; }
-    .song-card { flex-direction: column; }
-    .song-rank  { align-self: flex-start; }
-    .song-actions { flex-direction: row; }
+    .tabs {
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .input-row {
+      flex-direction: column;
+    }
+
+    .comp-form .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .song-card {
+      flex-direction: column;
+    }
+
+    .song-rank {
+      align-self: flex-start;
+    }
+
+    .song-actions {
+      flex-direction: row;
+    }
+
+    .module-result .result-row {
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .module-result .result-value {
+      text-align: left;
+    }
   }
 </style>
 </head>
+
 <body>
 <div class="container">
 
@@ -289,9 +616,17 @@
 
   <!-- Tabs -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="recommend" onclick="switchTab('recommend')">&#x1F3A7; Recommend</button>
-    <button class="tab-btn"        data-tab="recognize" onclick="switchTab('recognize')">&#x1F3A4; Recognize</button>
-    <button class="tab-btn"        data-tab="compose"   onclick="switchTab('compose')">&#x1F3B9; Compose</button>
+    <button class="tab-btn active" data-tab="recommend" onclick="switchTab('recommend')">
+      &#x1F3A7; Recommend
+    </button>
+
+    <button class="tab-btn" data-tab="recognize" onclick="switchTab('recognize')">
+      &#x1F3A4; Recognize
+    </button>
+
+    <button class="tab-btn" data-tab="compose" onclick="switchTab('compose')">
+      &#x1F3B9; Compose
+    </button>
   </nav>
 
   <!-- Backend status -->
@@ -303,9 +638,9 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- Tab 1: Recommendation -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
+
   <div class="panel active" id="panelRecommend">
 
-    <!-- Input row -->
     <div class="input-row">
       <input
         id="queryInput"
@@ -314,25 +649,24 @@
         maxlength="2000"
         autocomplete="off"
       >
-      <button id="recommendBtn" onclick="doRecommend()">Recommend</button>
+
+      <button id="recommendBtn" onclick="doRecommend()">
+        Recommend
+      </button>
     </div>
 
-    <!-- Loading -->
     <div class="loading" id="recommendLoading">
       <div class="spinner"></div>
       <span>Lyra is listening to your mood...</span>
     </div>
 
-    <!-- Error -->
     <div class="error-banner" id="recommendError" style="display:none;"></div>
 
-    <!-- Empty placeholder -->
     <div class="empty-state" id="recommendEmpty">
       <div class="icon">&#x1F3A7;</div>
       <p>Enter how you feel and hit <strong>Recommend</strong></p>
     </div>
 
-    <!-- Results -->
     <div class="results" id="recommendResults">
       <div class="ai-response" id="aiResponse"></div>
       <div class="song-list" id="songList"></div>
@@ -343,34 +677,48 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- Tab 2: Recognition -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
+
   <div class="panel" id="panelRecognize">
 
-    <!-- File upload area -->
-    <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+    <div
+      class="file-upload-area"
+      id="uploadArea"
+      onclick="document.getElementById('fileInput').click()"
+    >
       <div class="upload-icon">&#x1F3B6;</div>
+
       <div class="upload-hint" id="uploadHint">
         Click to upload an audio file<br>
         <small>Supported: mp3, wav, flac, ogg, m4a</small>
       </div>
-      <div class="upload-filename" id="uploadFilename" style="display:none;"></div>
-      <input type="file" id="fileInput" accept=".mp3,.wav,.flac,.ogg,.oga,.m4a,audio/*"
-             onchange="onFileSelected(event)">
+
+      <div
+        class="upload-filename"
+        id="uploadFilename"
+        style="display:none;"
+      ></div>
+
+      <input
+        type="file"
+        id="fileInput"
+        accept=".mp3,.wav,.flac,.ogg,.oga,.m4a,audio/*"
+        onchange="onFileSelected(event)"
+      >
     </div>
 
     <div class="input-row">
-      <button id="recognizeBtn" onclick="doRecognize()" disabled>Recognize</button>
+      <button id="recognizeBtn" onclick="doRecognize()" disabled>
+        Recognize
+      </button>
     </div>
 
-    <!-- Loading -->
     <div class="loading" id="recognizeLoading">
       <div class="spinner"></div>
       <span>Listening to your audio...</span>
     </div>
 
-    <!-- Error -->
     <div class="error-banner" id="recognizeError" style="display:none;"></div>
 
-    <!-- Results -->
     <div class="results" id="recognizeResults">
       <div class="module-result" id="recognizeData"></div>
     </div>
@@ -380,100 +728,172 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- Tab 3: Composition -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
+
   <div class="panel" id="panelCompose">
 
     <div class="comp-form">
+
       <label>
         What kind of music do you want? *
-        <textarea id="compPrompt" placeholder="e.g. Create a relaxing piano melody with soft strings..."
-                  maxlength="1000" rows="3"></textarea>
+
+        <textarea
+          id="compPrompt"
+          placeholder="e.g. 写一首关于夏夜校园的温柔中文流行歌曲..."
+          maxlength="1000"
+          rows="3"
+        ></textarea>
       </label>
 
       <div class="form-row">
+
         <label>
-          Duration (seconds) <span class="optional">— optional</span>
-          <input type="number" id="compDuration" value="30" min="1" max="300">
+          Duration (30–240 seconds)
+          <span class="optional">— optional</span>
+
+          <input
+            type="number"
+            id="compDuration"
+            value="60"
+            min="30"
+            max="240"
+          >
         </label>
+
         <label>
-          Style <span class="optional">— optional</span>
-          <input type="text" id="compStyle" placeholder="e.g. jazz, lo-fi" maxlength="200">
+          Style
+          <span class="optional">— optional</span>
+
+          <input
+            type="text"
+            id="compStyle"
+            placeholder="e.g. jazz, lo-fi"
+            maxlength="200"
+          >
         </label>
+
       </div>
 
       <div class="form-row">
+
         <label>
-          Tempo (BPM) <span class="optional">— optional</span>
-          <input type="number" id="compTempo" placeholder="e.g. 120" min="20" max="300">
+          Tempo (BPM)
+          <span class="optional">— optional</span>
+
+          <input
+            type="number"
+            id="compTempo"
+            placeholder="e.g. 120"
+            min="20"
+            max="300"
+          >
         </label>
+
         <label>
-          Key <span class="optional">— optional</span>
-          <input type="text" id="compKey" placeholder="e.g. C major" maxlength="30">
+          Key
+          <span class="optional">— optional</span>
+
+          <input
+            type="text"
+            id="compKey"
+            placeholder="e.g. C major"
+            maxlength="30"
+          >
         </label>
+
       </div>
 
       <div class="submit-row">
-        <button id="composeBtn" onclick="doCompose()">Generate</button>
+        <button id="composeBtn" onclick="doCompose()">
+          Generate
+        </button>
       </div>
+
     </div>
 
-    <!-- Loading -->
     <div class="loading" id="composeLoading">
       <div class="spinner"></div>
-      <span>Composing your music...</span>
+      <span>Creating your song... This may take a little while.</span>
     </div>
 
-    <!-- Error -->
     <div class="error-banner" id="composeError" style="display:none;"></div>
 
-    <!-- Results -->
     <div class="results" id="composeResults">
       <div class="module-result" id="composeData"></div>
     </div>
 
   </div>
 
-  <!-- Toast (shared) -->
+  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
 </div>
 
 <script>
-// ── Config ──
-// Override via query parameter:  index.html?api=http://other-host:8000
-const API = new URLSearchParams(window.location.search).get('api')
-         || 'http://127.0.0.1:8000';
 
-const REQUEST_TIMEOUT_MS = 30_000;
+// ═══════════════════════════════════════════════════════════════════
+// Config
+// ═══════════════════════════════════════════════════════════════════
 
-// ── Recommendation state ──
-let currentResult = null;          // last successful recommend response
-let ratings = {};                  // title -> 'like' | 'dislike'
-let _abortController = null;       // held so setLoading(false) can abort mid-flight
+const API =
+  new URLSearchParams(window.location.search).get('api')
+  || 'http://127.0.0.1:8000';
 
-// ── Recognition state ──
-let selectedFile = null;           // File object from <input type="file">
+const REQUEST_TIMEOUT_MS = 360_000;
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Recommendation state
+// ═══════════════════════════════════════════════════════════════════
+
+let currentResult = null;
+let ratings = {};
+let _abortController = null;
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Recognition state
+// ═══════════════════════════════════════════════════════════════════
+
+let selectedFile = null;
 let _recogAbortController = null;
 
-// ── Composition state ──
+
+// ═══════════════════════════════════════════════════════════════════
+// Composition state
+// ═══════════════════════════════════════════════════════════════════
+
 let _compAbortController = null;
 
-// ── Shared DOM refs (used by multiple tabs) ──
+
+// ═══════════════════════════════════════════════════════════════════
+// Shared DOM refs
+// ═══════════════════════════════════════════════════════════════════
+
 const $ = id => document.getElementById(id);
+
 const statusDot  = $('statusDot');
 const statusText = $('statusText');
 const toast      = $('toast');
 
-// ── Recommendation DOM refs ──
-const queryInput      = $('queryInput');
-const recommendBtn    = $('recommendBtn');
-const recommendLoading = $('recommendLoading');
-const recommendError  = $('recommendError');
-const recommendEmpty  = $('recommendEmpty');
-const recommendResults= $('recommendResults');
-const aiResponse      = $('aiResponse');
-const songList        = $('songList');
 
-// ── Recognition DOM refs ──
+// ═══════════════════════════════════════════════════════════════════
+// Recommendation DOM refs
+// ═══════════════════════════════════════════════════════════════════
+
+const queryInput       = $('queryInput');
+const recommendBtn     = $('recommendBtn');
+const recommendLoading = $('recommendLoading');
+const recommendError   = $('recommendError');
+const recommendEmpty   = $('recommendEmpty');
+const recommendResults = $('recommendResults');
+const aiResponse       = $('aiResponse');
+const songList         = $('songList');
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Recognition DOM refs
+// ═══════════════════════════════════════════════════════════════════
+
 const uploadArea       = $('uploadArea');
 const uploadHint       = $('uploadHint');
 const uploadFilename   = $('uploadFilename');
@@ -484,271 +904,509 @@ const recognizeError   = $('recognizeError');
 const recognizeResults = $('recognizeResults');
 const recognizeData    = $('recognizeData');
 
-// ── Composition DOM refs ──
-const compPrompt    = $('compPrompt');
-const compDuration  = $('compDuration');
-const compStyle     = $('compStyle');
-const compTempo     = $('compTempo');
-const compKey       = $('compKey');
-const composeBtn    = $('composeBtn');
+
+// ═══════════════════════════════════════════════════════════════════
+// Composition DOM refs
+// ═══════════════════════════════════════════════════════════════════
+
+const compPrompt     = $('compPrompt');
+const compDuration   = $('compDuration');
+const compStyle      = $('compStyle');
+const compTempo      = $('compTempo');
+const compKey        = $('compKey');
+const composeBtn     = $('composeBtn');
 const composeLoading = $('composeLoading');
-const composeError  = $('composeError');
+const composeError   = $('composeError');
 const composeResults = $('composeResults');
-const composeData   = $('composeData');
+const composeData    = $('composeData');
 
-// ── Init ──
+
+// ═══════════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════════
+
 window.addEventListener('DOMContentLoaded', checkHealth);
+
 queryInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRecommend();
-});
-// Allow Enter key to submit composition form
-compPrompt.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doCompose(); }
+  if (e.key === 'Enter') {
+    doRecommend();
+  }
 });
 
-// ── Tab switching ──
+compPrompt.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    doCompose();
+  }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Tab switching
+// ═══════════════════════════════════════════════════════════════════
+
 function switchTab(tab) {
-  // Update tab buttons
+
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
 
-  // Show / hide panels
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panelId = 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1);
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.remove('active');
+  });
+
+  const panelId =
+    'panel' + tab.charAt(0).toUpperCase() + tab.slice(1);
+
   const panel = document.getElementById(panelId);
-  if (panel) panel.classList.add('active');
+
+  if (panel) {
+    panel.classList.add('active');
+  }
 }
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Health check
 // ═══════════════════════════════════════════════════════════════════
 
 async function checkHealth() {
+
   try {
+
     const r = await fetch(API + '/health');
     const d = await r.json();
+
     if (d.status === 'ok') {
-      // Build a status message from module states
+
       const mods = d.modules || {};
       const parts = [];
-      if (mods.recommendation === 'stable') parts.push('Recommendation ready');
-      if (mods.recognition === 'not_implemented') parts.push('Recognition (placeholder)');
-      if (mods.composition === 'not_implemented') parts.push('Composition (placeholder)');
-      setStatus('ok', 'Backend connected — ' + parts.join(' · '));
+
+      if (mods.recommendation === 'stable') {
+        parts.push('Recommendation ready');
+      }
+
+      if (mods.recognition === 'stable') {
+        parts.push('Recognition ready');
+      } else if (mods.recognition === 'not_implemented') {
+        parts.push('Recognition (placeholder)');
+      }
+
+      if (mods.composition === 'not_implemented') {
+        parts.push('Composition (placeholder)');
+      }
+
+      setStatus(
+        'ok',
+        'Backend connected — ' + parts.join(' · ')
+      );
+
     } else {
-      setStatus('err', 'Backend returned unexpected status');
+
+      setStatus(
+        'err',
+        'Backend returned unexpected status'
+      );
+
     }
+
   } catch {
-    setStatus('err', 'Backend unreachable — start with: uvicorn backend.app:app --reload');
+
+    setStatus(
+      'err',
+      'Backend unreachable — start with: uvicorn backend.app:app --reload'
+    );
+
   }
 }
 
+
 function setStatus(state, msg) {
-  statusDot.className = 'status-dot ' + (state === 'ok' ? 'ok' : 'err');
+
+  statusDot.className =
+    'status-dot ' + (state === 'ok' ? 'ok' : 'err');
+
   statusText.textContent = msg;
 }
 
+
 // ═══════════════════════════════════════════════════════════════════
-// Tab 1: Recommendation (preserved from original, minimal changes)
+// Tab 1: Recommendation
 // ═══════════════════════════════════════════════════════════════════
 
 async function doRecommend() {
+
   const query = queryInput.value.trim();
+
   if (!query) return;
 
-  // Prevent duplicate requests from rapid clicks / Enter mashing.
   if (recommendBtn.disabled) return;
 
-  // Abort any in-flight request before starting a new one.
   if (_abortController) {
     _abortController.abort();
     _abortController = null;
   }
 
   const controller = new AbortController();
-  _abortController = controller;
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  // UI: enter loading
+  _abortController = controller;
+
+  const timer =
+    setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS
+    );
+
   setRecommendLoading(true);
 
   try {
+
     const r = await fetch(API + '/recommend', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_input: query }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_input: query
+      }),
       signal: controller.signal,
     });
 
     clearTimeout(timer);
 
     if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+
+      const err =
+        await r.json().catch(() => ({}));
+
+      throw new Error(
+        err.detail ||
+        err.error ||
+        `Server returned ${r.status}`
+      );
     }
 
     const data = await r.json();
-    if (!data.success) throw new Error(data.error || 'Recommendation failed');
+
+    if (!data.success) {
+      throw new Error(
+        data.error || 'Recommendation failed'
+      );
+    }
 
     currentResult = data;
-    ratings = {};   // reset ratings for new session
+    ratings = {};
+
     renderRecommendResults(data);
+
   } catch (e) {
+
     if (e.name === 'AbortError') {
-      showRecommendError('Request timed out. The server is taking too long — please try again.');
+
+      showRecommendError(
+        'Request timed out. The server is taking too long — please try again.'
+      );
+
     } else {
+
       showRecommendError(e.message);
+
     }
+
   } finally {
+
     clearTimeout(timer);
     _abortController = null;
     setRecommendLoading(false);
+
   }
 }
 
+
 function renderRecommendResults(data) {
+
   hideRecommendError();
+
   recommendEmpty.style.display = 'none';
   recommendResults.style.display = 'block';
 
-  // AI response text
   aiResponse.textContent = data.response || '';
 
-  // Song cards
   songList.innerHTML = '';
+
   const recs = data.recommendations || [];
+
   if (recs.length === 0) {
-    songList.innerHTML = '<div class="empty-state"><p>No songs matched. Try a different description.</p></div>';
+
+    songList.innerHTML =
+      '<div class="empty-state"><p>No songs matched. Try a different description.</p></div>';
+
   }
 
   recs.forEach((song, i) => {
+
     const card = document.createElement('div');
+
     card.className = 'song-card';
+
     card.innerHTML = `
       <div class="song-rank">${i + 1}</div>
+
       <div class="song-body">
-        <div class="song-title">${esc(song.title)} <span class="song-artist">— ${esc(song.artist)}</span></div>
-        <div class="song-meta">${esc(song.album || '')}${song.year ? ' (' + esc(song.year) + ')' : ''}  ·  ${esc(song.genre || '')}</div>
-        <div class="song-reason">${esc(song.reason || '')}</div>
+
+        <div class="song-title">
+          ${esc(song.title)}
+          <span class="song-artist">
+            — ${esc(song.artist)}
+          </span>
+        </div>
+
+        <div class="song-meta">
+          ${esc(song.album || '')}
+          ${song.year ? ' (' + esc(song.year) + ')' : ''}
+          ·
+          ${esc(song.genre || '')}
+        </div>
+
+        <div class="song-reason">
+          ${esc(song.reason || '')}
+        </div>
+
       </div>
+
       <div class="song-actions">
-        <button class="btn-like"    data-title="${escAttr(song.title)}" title="Like">&#x1F44D;</button>
-        <button class="btn-dislike" data-title="${escAttr(song.title)}" title="Dislike">&#x1F44E;</button>
-      </div>`;
+
+        <button
+          class="btn-like"
+          data-title="${escAttr(song.title)}"
+          title="Like"
+        >
+          &#x1F44D;
+        </button>
+
+        <button
+          class="btn-dislike"
+          data-title="${escAttr(song.title)}"
+          title="Dislike"
+        >
+          &#x1F44E;
+        </button>
+
+      </div>
+    `;
+
     songList.appendChild(card);
+
   });
 
-  // Attach rating handlers
-  songList.querySelectorAll('.btn-like').forEach(b =>
-    b.addEventListener('click', () => rateSong(b.dataset.title, 'like', b)));
-  songList.querySelectorAll('.btn-dislike').forEach(b =>
-    b.addEventListener('click', () => rateSong(b.dataset.title, 'dislike', b)));
+  songList
+    .querySelectorAll('.btn-like')
+    .forEach(b =>
+      b.addEventListener(
+        'click',
+        () => rateSong(
+          b.dataset.title,
+          'like',
+          b
+        )
+      )
+    );
 
-  // Scroll results into view
-  recommendResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  songList
+    .querySelectorAll('.btn-dislike')
+    .forEach(b =>
+      b.addEventListener(
+        'click',
+        () => rateSong(
+          b.dataset.title,
+          'dislike',
+          b
+        )
+      )
+    );
+
+  recommendResults.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
 }
 
+
 function rateSong(title, rating, btnEl) {
-  // Toggle off
+
   if (ratings[title] === rating) {
+
     delete ratings[title];
+
     btnEl.classList.remove('active');
+
   } else {
+
     ratings[title] = rating;
-    // Update active styling on both buttons for this song
-    const card = btnEl.closest('.song-card');
-    card.querySelector('.btn-like').classList.toggle('active', rating === 'like');
-    card.querySelector('.btn-dislike').classList.toggle('active', rating === 'dislike');
+
+    const card =
+      btnEl.closest('.song-card');
+
+    card
+      .querySelector('.btn-like')
+      .classList.toggle(
+        'active',
+        rating === 'like'
+      );
+
+    card
+      .querySelector('.btn-dislike')
+      .classList.toggle(
+        'active',
+        rating === 'dislike'
+      );
   }
+
   submitFeedback();
 }
 
+
 async function submitFeedback() {
+
   if (!currentResult) return;
+
   if (Object.keys(ratings).length === 0) return;
 
   try {
+
     const r = await fetch(API + '/feedback', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         user_query: currentResult.query || '',
-        song_titles: (currentResult.recommendations || []).map(s => s.title),
+        song_titles:
+          (currentResult.recommendations || [])
+            .map(s => s.title),
         ratings: ratings,
       }),
     });
+
     const d = await r.json();
-    if (d.success) showToast('Feedback sent — thank you!');
+
+    if (d.success) {
+      showToast('Feedback sent — thank you!');
+    }
+
   } catch {
-    // Silently ignore — feedback is best-effort
+    // Feedback is best-effort.
   }
 }
 
-// ── Recommendation UI helpers ──
+
 function setRecommendLoading(on) {
-  recommendLoading.style.display = on ? 'flex' : 'none';
+
+  recommendLoading.style.display =
+    on ? 'flex' : 'none';
+
   recommendBtn.disabled = on;
+
   if (on) {
+
     hideRecommendError();
+
     recommendResults.style.display = 'none';
+
   }
 }
+
 
 function showRecommendError(msg) {
-  recommendError.textContent = msg || 'Something went wrong.';
+
+  recommendError.textContent =
+    msg || 'Something went wrong.';
+
   recommendError.style.display = 'block';
+
   recommendEmpty.style.display = 'none';
+
   recommendResults.style.display = 'none';
 }
 
-function hideRecommendError() { recommendError.style.display = 'none'; }
+
+function hideRecommendError() {
+  recommendError.style.display = 'none';
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Tab 2: Recognition
 // ═══════════════════════════════════════════════════════════════════
 
 function onFileSelected(e) {
+
   const file = e.target.files[0];
+
   if (!file) {
+
     selectedFile = null;
+
     uploadArea.classList.remove('has-file');
+
     uploadHint.style.display = '';
+
     uploadFilename.style.display = 'none';
+
     recognizeBtn.disabled = true;
+
     return;
   }
 
   selectedFile = file;
+
   uploadArea.classList.add('has-file');
+
   uploadHint.style.display = 'none';
+
   uploadFilename.style.display = '';
-  uploadFilename.textContent = file.name + ' (' + formatSize(file.size) + ')';
+
+  uploadFilename.textContent =
+    file.name + ' (' + formatSize(file.size) + ')';
+
   recognizeBtn.disabled = false;
 
-  // Hide previous results
   recognizeResults.style.display = 'none';
+
   hideRecognizeError();
 }
 
+
 async function doRecognize() {
+
   if (!selectedFile) return;
+
   if (recognizeBtn.disabled) return;
 
-  // Abort any in-flight request
   if (_recogAbortController) {
+
     _recogAbortController.abort();
+
     _recogAbortController = null;
+
   }
 
   const controller = new AbortController();
+
   _recogAbortController = controller;
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  const timer =
+    setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS
+    );
 
   setRecognizeLoading(true);
 
   try {
+
     const formData = new FormData();
+
     formData.append('file', selectedFile);
 
     const r = await fetch(API + '/recognition', {
@@ -760,112 +1418,364 @@ async function doRecognize() {
     clearTimeout(timer);
 
     if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+
+      const err =
+        await r.json().catch(() => ({}));
+
+      throw new Error(
+        err.detail ||
+        err.error ||
+        `Server returned ${r.status}`
+      );
+
     }
 
     const data = await r.json();
-    if (!data.success) throw new Error(data.error || 'Recognition failed');
+
+    if (!data.success) {
+
+      throw new Error(
+        data.error || 'Recognition failed'
+      );
+
+    }
 
     renderRecognizeResult(data);
+
   } catch (e) {
+
     if (e.name === 'AbortError') {
-      showRecognizeError('Request timed out. Please try again.');
+
+      showRecognizeError(
+        'Recognition is taking longer than expected. Large audio files may take up to 1.5 minutes. Please try again if no result appears.'
+      );
+
     } else {
+
       showRecognizeError(e.message);
+
     }
+
   } finally {
+
     clearTimeout(timer);
+
     _recogAbortController = null;
+
     setRecognizeLoading(false);
+
   }
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// Recognition result
+// ═══════════════════════════════════════════════════════════════════
+
 function renderRecognizeResult(data) {
+
   hideRecognizeError();
+
   recognizeResults.style.display = 'block';
 
   const d = data.data || {};
-  const hasResult = d.title && d.artist && d.confidence > 0;
+
+  const hasResult =
+    Boolean(d.title) &&
+    Boolean(d.artist) &&
+    Number(d.confidence || 0) > 0;
+
+
+  // ── Format match offset ──
+
+  let matchOffset = '—';
+
+  if (d.match_offset_secs != null) {
+
+    const seconds = Number(
+      d.match_offset_secs
+    );
+
+    if (!isNaN(seconds)) {
+
+      const minutes =
+        Math.floor(seconds / 60);
+
+      const secs =
+        Math.floor(seconds % 60);
+
+      matchOffset =
+        String(minutes).padStart(2, '0') +
+        ':' +
+        String(secs).padStart(2, '0');
+
+    }
+  }
+
+
+  // ── Confidence ──
+
+  const confidence =
+    d.confidence != null
+      ? (Number(d.confidence) * 100).toFixed(1) + '%'
+      : '—';
+
+
+  // ── Song link ──
+
+  const songLink = d.song_link
+    ? `
+      <div class="result-row">
+
+        <span class="result-label">
+          Song Link
+        </span>
+
+        <span class="result-value">
+
+          <a
+            href="${escAttr(d.song_link)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="
+              color: var(--accent);
+              text-decoration: none;
+            "
+          >
+            Open song ↗
+          </a>
+
+        </span>
+
+      </div>
+    `
+    : '';
+
+
+  // ── Render result ──
 
   recognizeData.innerHTML = `
-    <div class="result-title">&#x1F3B6; Recognition Result</div>
-    <div class="result-row">
-      <span class="result-label">Title</span>
-      <span class="result-value">${esc(d.title || '—')}</span>
+
+    <div class="result-title">
+      &#x1F3B6; Recognition Result
     </div>
+
+
     <div class="result-row">
-      <span class="result-label">Artist</span>
-      <span class="result-value">${esc(d.artist || '—')}</span>
+
+      <span class="result-label">
+        Title
+      </span>
+
+      <span class="result-value">
+        ${esc(d.title || '—')}
+      </span>
+
     </div>
+
+
     <div class="result-row">
-      <span class="result-label">Confidence</span>
-      <span class="result-value">${d.confidence != null ? (d.confidence * 100).toFixed(1) + '%' : '—'}</span>
+
+      <span class="result-label">
+        Artist
+      </span>
+
+      <span class="result-value">
+        ${esc(d.artist || '—')}
+      </span>
+
     </div>
-    ${!hasResult ? '<div class="placeholder-badge">&#x2139;&#xFE0F; Demo placeholder — recognition model not yet integrated</div>' : ''}
+
+
+    <div class="result-row">
+
+      <span class="result-label">
+        Album
+      </span>
+
+      <span class="result-value">
+        ${esc(d.album || '—')}
+      </span>
+
+    </div>
+
+
+    <div class="result-row">
+
+      <span class="result-label">
+        Release Date
+      </span>
+
+      <span class="result-value">
+        ${esc(d.release_date || '—')}
+      </span>
+
+    </div>
+
+
+    <div class="result-row">
+
+      <span class="result-label">
+        Match Position
+      </span>
+
+      <span class="result-value">
+        ${matchOffset}
+      </span>
+
+    </div>
+
+
+    <div class="result-row">
+
+      <span class="result-label">
+        Confidence
+      </span>
+
+      <span class="result-value">
+        ${confidence}
+      </span>
+
+    </div>
+
+
+    ${songLink}
+
+
+    ${
+      !hasResult
+        ? `
+          <div class="placeholder-badge">
+            &#x2139;&#xFE0F; No matching song was found
+          </div>
+        `
+        : ''
+    }
+
   `;
 
-  recognizeResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  recognizeResults.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
 }
 
+
 // ── Recognition UI helpers ──
+
 function setRecognizeLoading(on) {
-  recognizeLoading.style.display = on ? 'flex' : 'none';
+
+  recognizeLoading.style.display =
+    on ? 'flex' : 'none';
+
   recognizeBtn.disabled = on;
+
   if (on) {
+
     hideRecognizeError();
+
     recognizeResults.style.display = 'none';
+
   }
 }
 
+
 function showRecognizeError(msg) {
-  recognizeError.textContent = msg || 'Something went wrong.';
+
+  recognizeError.textContent =
+    msg || 'Something went wrong.';
+
   recognizeError.style.display = 'block';
+
   recognizeResults.style.display = 'none';
 }
 
-function hideRecognizeError() { recognizeError.style.display = 'none'; }
+
+function hideRecognizeError() {
+  recognizeError.style.display = 'none';
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Tab 3: Composition
 // ═══════════════════════════════════════════════════════════════════
 
 async function doCompose() {
-  const prompt = compPrompt.value.trim();
+
+  const prompt =
+    compPrompt.value.trim();
+
   if (!prompt) {
-    showComposeError('Please enter a description of the music you want.');
+
+    showComposeError(
+      'Please enter a description of the music you want.'
+    );
+
     return;
   }
+
   if (composeBtn.disabled) return;
 
-  // Abort any in-flight request
   if (_compAbortController) {
+
     _compAbortController.abort();
+
     _compAbortController = null;
+
   }
 
   const controller = new AbortController();
+
   _compAbortController = controller;
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  const timer =
+    setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS
+    );
 
   setComposeLoading(true);
 
-  // Build the request body — only include non-empty optional fields.
+
   const body = {
     prompt: prompt,
-    duration: parseInt(compDuration.value) || 30,
+    duration:
+      parseInt(compDuration.value) || 30,
   };
-  const style = compStyle.value.trim();
-  if (style) body.style = style;
-  const tempo = parseInt(compTempo.value);
-  if (tempo && !isNaN(tempo)) body.tempo = tempo;
-  const key = compKey.value.trim();
-  if (key) body.key = key;
+
+
+  const style =
+    compStyle.value.trim();
+
+  if (style) {
+    body.style = style;
+  }
+
+
+  const tempo =
+    parseInt(compTempo.value);
+
+  if (tempo && !isNaN(tempo)) {
+    body.tempo = tempo;
+  }
+
+
+  const key =
+    compKey.value.trim();
+
+  if (key) {
+    body.key = key;
+  }
+
 
   try {
+
     const r = await fetch(API + '/composition', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -873,112 +1783,295 @@ async function doCompose() {
     clearTimeout(timer);
 
     if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.detail || err.error || `Server returned ${r.status}`);
+
+      const err =
+        await r.json().catch(() => ({}));
+
+      throw new Error(
+        err.detail ||
+        err.error ||
+        `Server returned ${r.status}`
+      );
+
     }
 
     const data = await r.json();
-    if (!data.success) throw new Error(data.error || 'Composition failed');
+
+    if (!data.success) {
+
+      throw new Error(
+        data.error || 'Composition failed'
+      );
+
+    }
 
     renderComposeResult(data, body);
+
   } catch (e) {
+
     if (e.name === 'AbortError') {
-      showComposeError('Request timed out. Music generation can take time — please try again.');
+
+      showComposeError(
+        'Request timed out. Music generation can take time — please try again.'
+      );
+
     } else {
+
       showComposeError(e.message);
+
     }
+
   } finally {
+
     clearTimeout(timer);
+
     _compAbortController = null;
+
     setComposeLoading(false);
+
   }
 }
 
+
 function renderComposeResult(data, requestBody) {
+
   hideComposeError();
+
   composeResults.style.display = 'block';
 
   const d = data.data || {};
-  const hasAudio = d.audio_url != null;
+
+  const hasAudio =
+    typeof d.audio_url === 'string' &&
+    d.audio_url.trim().length > 0;
+
+  // The backend returns a relative URL such as
+  // /static/generated/<uuid>.mp3. When index.html is opened
+  // directly via file://, a relative URL would incorrectly resolve
+  // to file:///static/... instead of the FastAPI server. Normalize
+  // relative backend URLs to the configured API origin.
+  let audioUrl = '';
+
+  if (hasAudio) {
+    audioUrl = d.audio_url.trim();
+
+    if (audioUrl.startsWith('/')) {
+      audioUrl = API.replace(/\/$/, '') + audioUrl;
+    }
+  }
+
 
   composeData.innerHTML = `
-    <div class="result-title">&#x1F3B9; Composition Result</div>
-    <div class="result-row">
-      <span class="result-label">Prompt</span>
-      <span class="result-value">${esc(requestBody.prompt)}</span>
+
+    <div class="result-title">
+      &#x1F3B9; Composition Result
     </div>
+
+
     <div class="result-row">
-      <span class="result-label">Duration</span>
-      <span class="result-value">${d.duration || requestBody.duration}s</span>
+
+      <span class="result-label">
+        Prompt
+      </span>
+
+      <span class="result-value">
+        ${esc(requestBody.prompt)}
+      </span>
+
     </div>
-    ${requestBody.style ? `
+
+
     <div class="result-row">
-      <span class="result-label">Style</span>
-      <span class="result-value">${esc(requestBody.style)}</span>
-    </div>` : ''}
-    ${requestBody.tempo ? `
-    <div class="result-row">
-      <span class="result-label">Tempo</span>
-      <span class="result-value">${requestBody.tempo} BPM</span>
-    </div>` : ''}
-    ${requestBody.key ? `
-    <div class="result-row">
-      <span class="result-label">Key</span>
-      <span class="result-value">${esc(requestBody.key)}</span>
-    </div>` : ''}
-    ${hasAudio
-      ? `<audio class="audio-player" controls src="${escAttr(d.audio_url)}"></audio>`
-      : '<div class="placeholder-badge">&#x2139;&#xFE0F; Demo placeholder — composition model not yet integrated</div>'
+
+      <span class="result-label">
+        Duration
+      </span>
+
+      <span class="result-value">
+        ${d.duration || requestBody.duration}s
+      </span>
+
+    </div>
+
+
+    ${
+      requestBody.style
+        ? `
+          <div class="result-row">
+            <span class="result-label">
+              Style
+            </span>
+
+            <span class="result-value">
+              ${esc(requestBody.style)}
+            </span>
+          </div>
+        `
+        : ''
     }
+
+
+    ${
+      requestBody.tempo
+        ? `
+          <div class="result-row">
+            <span class="result-label">
+              Tempo
+            </span>
+
+            <span class="result-value">
+              ${requestBody.tempo} BPM
+            </span>
+          </div>
+        `
+        : ''
+    }
+
+
+    ${
+      requestBody.key
+        ? `
+          <div class="result-row">
+            <span class="result-label">
+              Key
+            </span>
+
+            <span class="result-value">
+              ${esc(requestBody.key)}
+            </span>
+          </div>
+        `
+        : ''
+    }
+
+
+    ${
+      hasAudio
+        ? `
+          <audio
+            class="audio-player"
+            controls
+            src="${escAttr(audioUrl)}"
+            preload="metadata"
+            onerror="showToast('音频加载失败，请检查 FastAPI 的 /static 文件服务')"
+          ></audio>
+        `
+        : `
+          <div class="placeholder-badge">
+            &#x2139;&#xFE0F; Composition service did not return an audio file
+          </div>
+        `
+    }
+
   `;
 
-  composeResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  composeResults.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
 }
 
+
 // ── Composition UI helpers ──
+
 function setComposeLoading(on) {
-  composeLoading.style.display = on ? 'flex' : 'none';
+
+  composeLoading.style.display =
+    on ? 'flex' : 'none';
+
   composeBtn.disabled = on;
+
   if (on) {
+
     hideComposeError();
+
     composeResults.style.display = 'none';
+
   }
 }
 
+
 function showComposeError(msg) {
-  composeError.textContent = msg || 'Something went wrong.';
+
+  composeError.textContent =
+    msg || 'Something went wrong.';
+
   composeError.style.display = 'block';
+
   composeResults.style.display = 'none';
 }
 
-function hideComposeError() { composeError.style.display = 'none'; }
+
+function hideComposeError() {
+  composeError.style.display = 'none';
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Shared utilities
 // ═══════════════════════════════════════════════════════════════════
 
 function showToast(msg) {
+
   toast.textContent = msg;
+
   toast.classList.add('show');
+
   clearTimeout(toast._tid);
-  toast._tid = setTimeout(() => toast.classList.remove('show'), 2200);
+
+  toast._tid =
+    setTimeout(
+      () => toast.classList.remove('show'),
+      2200
+    );
 }
 
+
 function esc(s) {
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(s));
+
+  const div =
+    document.createElement('div');
+
+  div.appendChild(
+    document.createTextNode(
+      String(s ?? '')
+    )
+  );
+
   return div.innerHTML;
 }
 
+
 function escAttr(s) {
-  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
 }
 
+
 function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+
+  if (bytes < 1024) {
+    return bytes + ' B';
+  }
+
+  if (bytes < 1024 * 1024) {
+    return (
+      bytes / 1024
+    ).toFixed(1) + ' KB';
+  }
+
+  return (
+    bytes / (1024 * 1024)
+  ).toFixed(1) + ' MB';
+
 }
+
 </script>
 </body>
 </html>
