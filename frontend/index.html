@@ -224,6 +224,19 @@
     font-weight: 500;
   }
 
+  .recognition-notice {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 14px;
+    border: 1px solid rgba(244, 114, 182, .25);
+    border-radius: 10px;
+    background: rgba(244, 114, 182, .06);
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    text-align: center;
+  }
+
   .file-upload-area input[type="file"] {
     display: none;
   }
@@ -321,7 +334,7 @@
   }
 
   .loading {
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     gap: 14px;
@@ -697,6 +710,10 @@
         id="uploadFilename"
         style="display:none;"
       ></div>
+
+      <div class="recognition-notice">
+        ⚠️ 目前识曲主要支持海外歌曲，暂不支持大部分华语歌曲。
+      </div>
 
       <input
         type="file"
